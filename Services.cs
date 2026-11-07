@@ -145,7 +145,7 @@ namespace GameBoost
     // =====================================================================  INSTALADOR / DESINSTALADOR
     static class Installer
     {
-        public const string Version = "2.2.0";
+        public const string Version = "1.0.0";
         public static readonly string InstallDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "BLAD Studios", "GameBoost");
         public static string ExePath { get { return Path.Combine(InstallDir, "GameBoost.exe"); } }
         const string UninstKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\BLADStudios.GameBoost";

@@ -1,5 +1,5 @@
 ﻿{
     "url":  "https://github.com/Saayk/blad-boost/releases/latest/download/GameBoost_Setup.exe",
-    "version":  "2.2.0",
-    "notes":  "Mejoras de rendimiento y correcciones."
+    "version":  "1.0.0",
+    "notes":  "Primera version publica de Blad Boost: optimiza Windows para juegos (energia y CPU, graficos, red y perifericos), limpia el sistema, incluye Modo Juego y se actualiza sola."
 }

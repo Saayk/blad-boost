@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 $dir = $PSScriptRoot
 $dist = Join-Path $dir 'dist'
 New-Item -ItemType Directory -Force $dist | Out-Null
-$version = '2.2.0'
+$version = '1.0.0'
 
 # ---------- icono (PNG dentro de ICO, 256 px) ----------
 if (-not (Test-Path "$dir\app.ico")) {
@@ -61,7 +61,7 @@ Build "$dir\Setup_test.exe" $setupRes ($shared + "$dir\Setup.cs")
 Build "$dist\GameBoost_Setup.exe" ($setupRes + "/win32manifest:$dir\app.manifest") ($shared + "$dir\Setup.cs")
 
 # ---------- version.json (subelo junto al instalador para publicar una actualizacion) ----------
-@{ version = $version; url = 'https://github.com/Saayk/blad-boost/releases/latest/download/GameBoost_Setup.exe'; notes = 'Mejoras de rendimiento y correcciones.' } |
+@{ version = $version; url = 'https://github.com/Saayk/blad-boost/releases/latest/download/GameBoost_Setup.exe'; notes = 'Primera version publica de Blad Boost: optimiza Windows para juegos (energia y CPU, graficos, red y perifericos), limpia el sistema, incluye Modo Juego y se actualiza sola.' } |
   ConvertTo-Json | Set-Content "$dist\version.json" -Encoding utf8
 
 if ($Deploy) {

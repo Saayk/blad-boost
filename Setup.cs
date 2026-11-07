@@ -16,9 +16,9 @@ using System.Windows.Threading;
 [assembly: AssemblyCompany("BLAD Studios")]
 [assembly: AssemblyProduct("GameBoost")]
 [assembly: AssemblyCopyright("© 2026 BLAD Studios")]
-[assembly: AssemblyVersion("2.2.0.0")]
-[assembly: AssemblyFileVersion("2.2.0.0")]
-[assembly: AssemblyInformationalVersion("2.2.0")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyInformationalVersion("1.0.0")]
 
 namespace GameBoost
 {
