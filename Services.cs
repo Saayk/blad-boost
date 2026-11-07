@@ -257,7 +257,7 @@ namespace GameBoost
     static class Updater
     {
         // Sube version.json (generado por build.ps1 en la carpeta dist) a esta dirección para publicar una actualización
-        public const string Feed = "https://raw.githubusercontent.com/bladstudios/gameboost/main/version.json";
+        public const string Feed = "https://raw.githubusercontent.com/Saayk/blad-boost/main/version.json";
 
         public static bool Newer(string a, string b)
         {

@@ -1,0 +1,37 @@
+name: Release
+
+# Al subir un tag como v2.2.0 se compila la app en Windows y se publica un Release
+# con GameBoost_Setup.exe. La app consulta version.json en main para auto-actualizarse.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compilar
+        shell: powershell
+        run: ./build.ps1
+
+      - name: Verificar que el tag coincide con la version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: powershell
+        run: |
+          $v = (Get-Content dist/version.json -Raw | ConvertFrom-Json).version
+          if ("v$v" -ne "${{ github.ref_name }}") { throw "El tag ${{ github.ref_name }} no coincide con la version $v" }
+
+      - name: Publicar release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" dist/GameBoost_Setup.exe dist/GameBoost.exe dist/version.json \
+            --title "Blad Boost ${{ github.ref_name }}" --notes "Mejoras de rendimiento y correcciones."
