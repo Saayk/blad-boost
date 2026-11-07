@@ -1,10 +1,13 @@
 name: Release
 
-# Al subir un tag como v2.2.0 se compila la app en Windows y se publica un Release
-# con GameBoost_Setup.exe. La app consulta version.json en main para auto-actualizarse.
+# Al fusionar a main un cambio en version.json se compila la app en Windows y se
+# publica un Release (tag vX.Y.Z) con GameBoost_Setup.exe. La app consulta
+# version.json en main para auto-actualizarse. Para sacar una version nueva:
+# sube el numero en build.ps1, App.cs (3 lineas) y version.json, y fusiona a main.
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths: ['version.json']
   workflow_dispatch:
 
 permissions:
@@ -20,18 +23,13 @@ jobs:
         shell: powershell
         run: ./build.ps1
 
-      - name: Verificar que el tag coincide con la version
-        if: startsWith(github.ref, 'refs/tags/v')
-        shell: powershell
-        run: |
-          $v = (Get-Content dist/version.json -Raw | ConvertFrom-Json).version
-          if ("v$v" -ne "${{ github.ref_name }}") { throw "El tag ${{ github.ref_name }} no coincide con la version $v" }
-
       - name: Publicar release
-        if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" dist/GameBoost_Setup.exe dist/GameBoost.exe dist/version.json \
-            --title "Blad Boost ${{ github.ref_name }}" --notes "Mejoras de rendimiento y correcciones."
+          v=$(grep -o '"version": *"[^"]*"' dist/version.json | sed 's/.*: *"//;s/"//')
+          notes=$(grep -o '"notes": *"[^"]*"' dist/version.json | sed 's/.*: *"//;s/"//')
+          if gh release view "v$v" >/dev/null 2>&1; then echo "El release v$v ya existe"; exit 0; fi
+          gh release create "v$v" dist/GameBoost_Setup.exe dist/GameBoost.exe dist/version.json \
+            --target "${{ github.sha }}" --title "Blad Boost v$v" --notes "$notes"
