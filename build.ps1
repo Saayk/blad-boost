@@ -61,7 +61,7 @@ Build "$dir\Setup_test.exe" $setupRes ($shared + "$dir\Setup.cs")
 Build "$dist\GameBoost_Setup.exe" ($setupRes + "/win32manifest:$dir\app.manifest") ($shared + "$dir\Setup.cs")
 
 # ---------- version.json (subelo junto al instalador para publicar una actualizacion) ----------
-@{ version = $version; url = 'https://github.com/bladstudios/gameboost/releases/latest/download/GameBoost_Setup.exe'; notes = 'Mejoras de rendimiento y correcciones.' } |
+@{ version = $version; url = 'https://github.com/Saayk/blad-boost/releases/latest/download/GameBoost_Setup.exe'; notes = 'Mejoras de rendimiento y correcciones.' } |
   ConvertTo-Json | Set-Content "$dist\version.json" -Encoding utf8
 
 if ($Deploy) {
