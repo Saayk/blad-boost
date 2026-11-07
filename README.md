@@ -5,7 +5,7 @@
 **Más FPS, menos tirones. Un optimizador de PC para jugadores, hecho por BLAD Studios.**
 
 ![Plataforma](https://img.shields.io/badge/plataforma-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
-![Versión](https://img.shields.io/badge/versi%C3%B3n-2.2.0-brightgreen)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.0-brightgreen)
 ![Lenguaje](https://img.shields.io/badge/C%23-WPF-512BD4?logo=dotnet&logoColor=white)
 ![Licencia](https://img.shields.io/badge/licencia-MIT-blue)
 
