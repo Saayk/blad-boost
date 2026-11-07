@@ -1,0 +1,142 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GameBoost Setup" Width="560" Height="600" WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13" Foreground="#E8EAF0"
+        UseLayoutRounding="True" SnapsToDevicePixels="True">
+  <Window.Resources>
+    <SolidColorBrush x:Key="Accent" Color="#7B61FF"/>
+    <SolidColorBrush x:Key="Sub" Color="#8A90A2"/>
+    <FontFamily x:Key="Icons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+    <LinearGradientBrush x:Key="AccentGrad" StartPoint="0,0" EndPoint="1,1">
+      <GradientStop Color="#8A6BFF" Offset="0"/>
+      <GradientStop Color="#5A7BFF" Offset="1"/>
+    </LinearGradientBrush>
+    <Style x:Key="Primary" TargetType="Button">
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="b" Background="{StaticResource AccentGrad}" CornerRadius="10" Padding="18,12">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Opacity" Value="0.86"/></Trigger>
+              <Trigger Property="IsPressed" Value="True"><Setter TargetName="b" Property="Opacity" Value="0.72"/></Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter TargetName="b" Property="Opacity" Value="0.4"/></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="CloseBtn" TargetType="Button">
+      <Setter Property="Width" Value="46"/>
+      <Setter Property="Height" Value="38"/>
+      <Setter Property="Foreground" Value="{StaticResource Sub}"/>
+      <Setter Property="FontFamily" Value="{StaticResource Icons}"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="b" Background="Transparent" CornerRadius="0,13,0,0"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="b" Property="Background" Value="#E81123"/>
+                <Setter Property="Foreground" Value="White"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="Switch" TargetType="CheckBox">
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="CheckBox">
+            <Border x:Name="track" Width="40" Height="22" CornerRadius="11" Background="#262B39">
+              <Ellipse x:Name="thumb" Width="16" Height="16" Fill="#9AA0B2" HorizontalAlignment="Left" Margin="3,0,0,0">
+                <Ellipse.RenderTransform><TranslateTransform X="0"/></Ellipse.RenderTransform>
+              </Ellipse>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Trigger.EnterActions>
+                  <BeginStoryboard><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="thumb" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" To="18" Duration="0:0:0.16"/>
+                  </Storyboard></BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                  <BeginStoryboard><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="thumb" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" To="0" Duration="0:0:0.16"/>
+                  </Storyboard></BeginStoryboard>
+                </Trigger.ExitActions>
+                <Setter TargetName="track" Property="Background" Value="{StaticResource Accent}"/>
+                <Setter TargetName="thumb" Property="Fill" Value="White"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter TargetName="track" Property="Opacity" Value="0.45"/></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </Window.Resources>
+
+  <Border Margin="14" CornerRadius="14" Background="#0B0D12" BorderBrush="#1C2130" BorderThickness="1">
+    <Border.Effect><DropShadowEffect BlurRadius="26" ShadowDepth="0" Opacity="0.55" Color="Black"/></Border.Effect>
+    <Grid>
+      <Border Height="190" VerticalAlignment="Top" CornerRadius="13,13,0,0">
+        <Border.Background>
+          <RadialGradientBrush Center="0.5,0" GradientOrigin="0.5,0" RadiusX="0.9" RadiusY="1">
+            <GradientStop Color="#2A1F66" Offset="0"/>
+            <GradientStop Color="#0B0D12" Offset="1"/>
+          </RadialGradientBrush>
+        </Border.Background>
+      </Border>
+      <Button x:Name="BtnX" Style="{StaticResource CloseBtn}" Content="&#xE8BB;" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+      <StackPanel Margin="36,40,36,28">
+        <Border Width="72" Height="72" CornerRadius="20" Background="{StaticResource AccentGrad}" HorizontalAlignment="Center">
+          <Border.Effect><DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.6" Color="#7B61FF"/></Border.Effect>
+          <TextBlock Text="&#xE945;" FontFamily="{StaticResource Icons}" FontSize="32" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+        <TextBlock Text="GameBoost" FontSize="28" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,16,0,0" FontFamily="Segoe UI Variable Display, Segoe UI"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2,0,0">
+          <TextBlock Text="by BLAD Studios" Foreground="{StaticResource Sub}"/>
+          <TextBlock x:Name="SetupVersion" Foreground="{StaticResource Sub}" Margin="8,0,0,0"/>
+        </StackPanel>
+        <TextBlock Text="Optimizador de PC para juegos" Foreground="#B9BED0" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+
+        <Border Background="#13161E" CornerRadius="12" BorderBrush="#1F2430" BorderThickness="1" Margin="0,24,0,0">
+          <StackPanel>
+            <Grid Margin="18,14">
+              <TextBlock Text="Crear acceso directo en el escritorio" VerticalAlignment="Center" FontWeight="SemiBold"/>
+              <CheckBox x:Name="ChkDesktop" Style="{StaticResource Switch}" IsChecked="True" HorizontalAlignment="Right"/>
+            </Grid>
+            <Border Height="1" Background="#1F2430"/>
+            <Grid Margin="18,14">
+              <TextBlock Text="Iniciar con Windows (en la bandeja)" VerticalAlignment="Center" FontWeight="SemiBold"/>
+              <CheckBox x:Name="ChkStartup" Style="{StaticResource Switch}" IsChecked="True" HorizontalAlignment="Right"/>
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <StackPanel Orientation="Horizontal" Margin="2,14,0,0">
+          <TextBlock Text="Se instalará en" Foreground="{StaticResource Sub}" FontSize="12"/>
+          <TextBlock x:Name="InstallPath" Foreground="#B9BED0" FontSize="12" Margin="6,0,0,0"/>
+        </StackPanel>
+
+        <Grid Height="5" Margin="0,18,0,0">
+          <Border Background="#1F2430" CornerRadius="3"/>
+          <Border x:Name="Bar" Background="{StaticResource AccentGrad}" CornerRadius="3" HorizontalAlignment="Left" Width="0"/>
+        </Grid>
+        <TextBlock x:Name="StepText" Foreground="{StaticResource Sub}" FontSize="12" Margin="2,8,0,0" TextWrapping="Wrap"/>
+
+        <Button x:Name="BtnInstall" Style="{StaticResource Primary}" Content="Instalar" Margin="0,14,0,0"/>
+        <TextBlock Text="Al instalar aceptas que GameBoost modifique ajustes de Windows. Todos los cambios son reversibles." Foreground="#5A6072" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="0,12,0,0"/>
+      </StackPanel>
+    </Grid>
+  </Border>
+</Window>
