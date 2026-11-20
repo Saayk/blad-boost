@@ -17,7 +17,7 @@ namespace GameBoost
 {
     public class MacroStep
     {
-        public string Kind = "text"; // text | keys | wait | open
+        public string Kind = "text"; // text | keys | mouse | wait | open  (mouse: Value = Left | Right | Middle | X1 | X2)
         public string Value = "";
         // Tiempos en ms (0 = lo más rápido posible).
         // Texto: Hold = cuánto se mantiene cada letra, Delay = pausa entre letras.
@@ -300,6 +300,10 @@ namespace GameBoost
                         if (HotkeyText.Parse(v, out mods, out vk)) SendCombo(mods, vk, hold);
                         if (delay > 0) Thread.Sleep(delay);
                         break;
+                    case "mouse":
+                        SendMouse(v, hold);
+                        if (delay > 0) Thread.Sleep(delay);
+                        break;
                     case "wait":
                         if (int.TryParse(v.Trim(), out ms)) Thread.Sleep(Math.Max(0, Math.Min(60000, ms)));
                         break;
@@ -384,6 +388,31 @@ namespace GameBoost
             Send(down.ToArray());
             if (hold > 0) Thread.Sleep(hold);
             Send(up.ToArray());
+        }
+
+        // Clic de un botón del ratón donde esté el cursor. hold = ms que se mantiene pulsado.
+        // Los clics enviados llevan la marca de "inyectado", así que no disparan otras macros con botones del ratón.
+        static void SendMouse(string button, int hold)
+        {
+            uint down, up, data = 0;
+            switch (button)
+            {
+                case "Right": down = 0x0008; up = 0x0010; break;
+                case "Middle": down = 0x0020; up = 0x0040; break;
+                case "X1": down = 0x0080; up = 0x0100; data = 1; break;
+                case "X2": down = 0x0080; up = 0x0100; data = 2; break;
+                default: down = 0x0002; up = 0x0004; break; // izquierdo
+            }
+            Send(new[] { MouseEv(down, data) });
+            if (hold > 0) Thread.Sleep(hold);
+            Send(new[] { MouseEv(up, data) });
+        }
+
+        static INPUT MouseEv(uint flags, uint data)
+        {
+            var i = new INPUT { type = 0 };
+            i.U.mi = new MOUSEINPUT { dwFlags = flags, mouseData = data };
+            return i;
         }
 
         static bool Extended(ushort vk)

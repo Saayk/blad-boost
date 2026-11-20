@@ -424,6 +424,8 @@ namespace GameBoost
             { "Cuánto tiempo se mantiene pulsada la combinación.", "How long the combination is held down." },
             { "Pausa entre cada letra. Con 0 y 0 el texto se escribe de golpe.", "Pause between letters. With 0 and 0 the text is typed all at once." },
             { "Pausa al terminar este paso, antes del siguiente.", "Pause after this step, before the next one." },
+            { "Ratón", "Mouse" }, { "Izquierdo", "Left" }, { "Derecho", "Right" }, { "Rueda", "Wheel" }, { "Lateral 4", "Side 4" }, { "Lateral 5", "Side 5" },
+            { "Cuánto tiempo se mantiene pulsado el botón.", "How long the button is held down." },
             { "Atajo", "Hotkey" }, { "Activar o desactivar esta macro", "Turn this macro on or off" }, { "Eliminar", "Delete" }, { "¿Seguro?", "Sure?" },
             { "Texto", "Text" }, { "Teclas", "Keys" }, { "Esperar", "Wait" }, { "Abrir programa", "Open program" }, { "milisegundos", "milliseconds" },
             { "Programa, archivo o dirección web", "Program, file or web address" }, { "Elige el programa o archivo", "Choose the program or file" },

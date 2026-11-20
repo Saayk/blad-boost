@@ -2695,7 +2695,7 @@ namespace GameBoost
                 string kind = kd[0];
                 var b = Btn("+ " + kd[1], "Secondary", () =>
                 {
-                    m.Steps.Add(new MacroStep { Kind = kind, Value = kind == "wait" ? "500" : "" });
+                    m.Steps.Add(new MacroStep { Kind = kind, Value = DefaultStepValue(kind) });
                     MacroSaved(true);
                     RebuildMacros();
                 });
@@ -2708,22 +2708,29 @@ namespace GameBoost
 
         List<string[]> MacroKinds()
         {
-            return new List<string[]> { new[] { "text", Tr("Texto") }, new[] { "keys", Tr("Teclas") }, new[] { "wait", Tr("Esperar") }, new[] { "open", Tr("Abrir programa") } };
+            return new List<string[]> { new[] { "text", Tr("Texto") }, new[] { "keys", Tr("Teclas") }, new[] { "mouse", Tr("Ratón") }, new[] { "wait", Tr("Esperar") }, new[] { "open", Tr("Abrir programa") } };
+        }
+
+        static string DefaultStepValue(string kind)
+        {
+            return kind == "wait" ? "500" : kind == "mouse" ? "Left" : "";
         }
 
         FrameworkElement StepRow(Macro m, int i)
         {
             var st = m.Steps[i];
-            var g = new Grid { Margin = new Thickness(0, 10, 0, 0) };
+            // Fila 1: número, tipo de paso y botones (subir/bajar/quitar). Fila 2: editor del paso a todo el ancho.
+            var g = new Grid { Margin = new Thickness(0, 12, 0, 0) };
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(26) });
-            g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             g.ColumnDefinitions.Add(new ColumnDefinition());
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            g.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            g.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             g.Children.Add(new TextBlock { Text = (i + 1) + ".", Foreground = Br("Mute"), VerticalAlignment = VerticalAlignment.Center });
             var kinds = SegBox("mk" + m.Id + "_" + i, MacroKinds(), st.Kind, c =>
             {
-                st.Kind = c; st.Value = c == "wait" ? "500" : "";
+                st.Kind = c; st.Value = DefaultStepValue(c);
                 MacroSaved(false);
                 RebuildMacros();
             });
@@ -2735,6 +2742,12 @@ namespace GameBoost
                 var rec = KeyRecorder(st.Value, false, v => { st.Value = v; MacroSaved(false); });
                 rec.HorizontalAlignment = HorizontalAlignment.Left;
                 editor = rec;
+            }
+            else if (st.Kind == "mouse")
+            {
+                var buttons = new[] { new[] { "Left", Tr("Izquierdo") }, new[] { "Right", Tr("Derecho") }, new[] { "Middle", Tr("Rueda") },
+                                      new[] { "X1", Tr("Lateral 4") }, new[] { "X2", Tr("Lateral 5") } };
+                editor = SegBox("mb" + m.Id + "_" + i, buttons, string.IsNullOrEmpty(st.Value) ? "Left" : st.Value, c => { st.Value = c; MacroSaved(false); });
             }
             else if (st.Kind == "wait")
             {
@@ -2774,12 +2787,13 @@ namespace GameBoost
                 editor = tb;
             }
             // Tiempos de pulsación y pausa para los pasos de texto y teclas.
-            if (st.Kind == "text" || st.Kind == "keys")
+            if (st.Kind == "text" || st.Kind == "keys" || st.Kind == "mouse")
             {
                 var box = new StackPanel();
                 box.Children.Add(editor);
                 var times = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
-                times.Children.Add(MsField(Tr("Pulsación"), st.Kind == "text" ? Tr("Cuánto tiempo se mantiene pulsada cada letra.") : Tr("Cuánto tiempo se mantiene pulsada la combinación."),
+                times.Children.Add(MsField(Tr("Pulsación"), st.Kind == "text" ? Tr("Cuánto tiempo se mantiene pulsada cada letra.")
+                                                        : st.Kind == "mouse" ? Tr("Cuánto tiempo se mantiene pulsado el botón.") : Tr("Cuánto tiempo se mantiene pulsada la combinación."),
                     st.Hold, 5000, v => { st.Hold = v; MacroSaved(false); }));
                 times.Children.Add(MsField(st.Kind == "text" ? Tr("Entre letras") : Tr("Pausa después"),
                     st.Kind == "text" ? Tr("Pausa entre cada letra. Con 0 y 0 el texto se escribe de golpe.") : Tr("Pausa al terminar este paso, antes del siguiente."),
@@ -2787,9 +2801,8 @@ namespace GameBoost
                 box.Children.Add(times);
                 editor = box;
             }
-            editor.Margin = new Thickness(12, 0, 8, 0);
-            editor.VerticalAlignment = VerticalAlignment.Center;
-            Grid.SetColumn(editor, 2); g.Children.Add(editor);
+            editor.Margin = new Thickness(0, 8, 0, 0);
+            Grid.SetRow(editor, 1); Grid.SetColumn(editor, 1); Grid.SetColumnSpan(editor, 2); g.Children.Add(editor);
 
             var btns = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
             btns.Children.Add(IconBtn("", Tr("Subir"), () =>
@@ -2806,7 +2819,7 @@ namespace GameBoost
             {
                 m.Steps.RemoveAt(i); MacroSaved(true); RebuildMacros();
             }));
-            Grid.SetColumn(btns, 3); g.Children.Add(btns);
+            Grid.SetColumn(btns, 2); g.Children.Add(btns);
             return g;
         }
 
@@ -2831,6 +2844,8 @@ namespace GameBoost
                 () => Nav("Aim"), () => snap("aim"),
                 () => Nav("Macros"), () => snap("macros"),
                 () => AddMacroExample(0), () => AddMacroExample(3), () => snap("macros2"),
+                () => { var mm = macroHost.Data.Items.Last(); mm.Steps.Add(new MacroStep { Kind = "mouse", Value = "X1", Hold = 40, Delay = 100 }); RebuildMacros();
+                        E<ScrollViewer>("PageMacros").ScrollToEnd(); }, () => snap("macros3"),
                 () => Nav("Apps"), () => {}, () => snap("apps"),
                 () => Nav("Tips"), () => snap("tips"),
                 () => Nav("Settings"), () => snap("settings"),
