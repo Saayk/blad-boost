@@ -2582,23 +2582,61 @@ namespace GameBoost
             foreach (var m in macroHost.Data.Items) list.Children.Add(MacroCard(m));
         }
 
-        // Campo que graba una combinación de teclas al pulsarla. Retroceso o Supr lo vacían.
+        // Campo que graba una tecla o combinación al pulsarla (y, si es un atajo, también la rueda o los botones laterales del ratón).
+        // Con el campo vacío, Retroceso o Supr se graban como tecla; con algo grabado, lo borran.
         TextBox KeyRecorder(string value, bool hotkey, Action<string> set)
         {
-            var tb = new TextBox { Text = value, IsReadOnly = true, Cursor = Cursors.Hand, Width = 160, FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 12,
-                                   ToolTip = Tr("Haz clic aquí y pulsa la combinación de teclas") };
+            var tb = new TextBox { Text = value, IsReadOnly = true, Cursor = Cursors.Hand, Width = 170, FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 12,
+                                   ToolTip = hotkey ? Tr("Haz clic aquí y pulsa una tecla, una combinación o un botón del ratón (rueda o laterales)")
+                                                    : Tr("Haz clic aquí y pulsa la combinación de teclas") };
+            Action<string> accept = t =>
+            {
+                if (hotkey && !HotkeyText.IsSafeHotkey(t))
+                    Toast(Tr("Ojo: sin Ctrl, Alt o Win, esa tecla dejará de funcionar en otras apps mientras la macro esté activa."), 1);
+                tb.Text = t;
+                set(t);
+            };
             tb.PreviewKeyDown += (s, e) =>
             {
                 e.Handled = true;
                 Key k = e.Key == Key.System ? e.SystemKey : e.Key;
-                if ((k == Key.Back || k == Key.Delete) && Keyboard.Modifiers == ModifierKeys.None) { tb.Text = ""; set(""); return; }
+                if ((k == Key.Back || k == Key.Delete) && Keyboard.Modifiers == ModifierKeys.None && tb.Text.Length > 0) { tb.Text = ""; set(""); return; }
                 string t = HotkeyText.FromKeys(Keyboard.Modifiers, k);
-                if (t == null) return;
-                if (hotkey && !HotkeyText.IsSafeHotkey(t)) { Toast(Tr("Usa Ctrl, Alt o Win (o una tecla F) para que el atajo no choque con lo que escribes."), 3); return; }
-                tb.Text = t;
-                set(t);
+                if (t != null) accept(t);
+            };
+            if (hotkey)
+                tb.PreviewMouseDown += (s, e) =>
+                {
+                    string t = HotkeyText.FromMouse(Keyboard.Modifiers, e.ChangedButton);
+                    if (t == null) return; // clic izquierdo/derecho: se usan para enfocar el campo
+                    e.Handled = true;
+                    tb.Focus();
+                    accept(t);
+                };
+            return tb;
+        }
+
+        // Caja numérica en milisegundos (se valida al salir del campo).
+        TextBox MsBox(int value, int max, Action<int> set)
+        {
+            var tb = new TextBox { Text = value.ToString(), Width = 64, HorizontalContentAlignment = HorizontalAlignment.Right };
+            tb.LostFocus += (s, e) =>
+            {
+                int v;
+                if (!int.TryParse(tb.Text.Trim(), out v)) v = value;
+                v = Math.Max(0, Math.Min(max, v));
+                tb.Text = v.ToString(); value = v; set(v);
             };
             return tb;
+        }
+
+        StackPanel MsField(string label, string tip, int value, int max, Action<int> set)
+        {
+            var p = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 18, 0), ToolTip = tip };
+            p.Children.Add(new TextBlock { Text = label, Foreground = Br("Sub"), FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
+            p.Children.Add(MsBox(value, max, set));
+            p.Children.Add(new TextBlock { Text = "ms", Foreground = Br("Mute"), FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) });
+            return p;
         }
 
         Button IconBtn(string glyph, string tip, Action click)
@@ -2642,6 +2680,11 @@ namespace GameBoost
             };
             Grid.SetColumn(del, 3); head.Children.Add(del);
             sp.Children.Add(head);
+
+            var timing = new WrapPanel { Margin = new Thickness(2, 12, 0, 0) };
+            timing.Children.Add(MsField(Tr("Retardo antes de empezar"), Tr("Espera desde que pulsas el atajo hasta que empieza la macro."), m.StartDelay, 10000,
+                v => { m.StartDelay = v; MacroSaved(false); }));
+            sp.Children.Add(timing);
 
             sp.Children.Add(new TextBlock { Text = Tr("PASOS"), Style = St("Sec"), Margin = new Thickness(2, 16, 0, 0) });
             for (int i = 0; i < m.Steps.Count; i++) sp.Children.Add(StepRow(m, i));
@@ -2729,6 +2772,20 @@ namespace GameBoost
                                        VerticalScrollBarVisibility = ScrollBarVisibility.Auto, ToolTip = Tr("Etiquetas: {fecha}, {hora} y {portapapeles}") };
                 tb.LostFocus += (s, e) => { st.Value = tb.Text; MacroSaved(false); };
                 editor = tb;
+            }
+            // Tiempos de pulsación y pausa para los pasos de texto y teclas.
+            if (st.Kind == "text" || st.Kind == "keys")
+            {
+                var box = new StackPanel();
+                box.Children.Add(editor);
+                var times = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
+                times.Children.Add(MsField(Tr("Pulsación"), st.Kind == "text" ? Tr("Cuánto tiempo se mantiene pulsada cada letra.") : Tr("Cuánto tiempo se mantiene pulsada la combinación."),
+                    st.Hold, 5000, v => { st.Hold = v; MacroSaved(false); }));
+                times.Children.Add(MsField(st.Kind == "text" ? Tr("Entre letras") : Tr("Pausa después"),
+                    st.Kind == "text" ? Tr("Pausa entre cada letra. Con 0 y 0 el texto se escribe de golpe.") : Tr("Pausa al terminar este paso, antes del siguiente."),
+                    st.Delay, 10000, v => { st.Delay = v; MacroSaved(false); }));
+                box.Children.Add(times);
+                editor = box;
             }
             editor.Margin = new Thickness(12, 0, 8, 0);
             editor.VerticalAlignment = VerticalAlignment.Center;
