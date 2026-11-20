@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 $dir = $PSScriptRoot
 $dist = Join-Path $dir 'dist'
 New-Item -ItemType Directory -Force $dist | Out-Null
-$version = '1.1.0'
+$version = '1.2.0'
 
 # ---------- icono (PNG dentro de ICO, 256 px) ----------
 if (-not (Test-Path "$dir\app.ico")) {
@@ -62,7 +62,7 @@ Build "$dir\Setup_test.exe" $setupRes ($shared + "$dir\Setup.cs")
 Build "$dist\GameBoost_Setup.exe" ($setupRes + "/win32manifest:$dir\app.manifest") ($shared + "$dir\Setup.cs")
 
 # ---------- version.json (subelo junto al instalador para publicar una actualizacion) ----------
-@{ version = $version; url = 'https://github.com/Saayk/blad-boost/releases/latest/download/GameBoost_Setup.exe'; notes = 'Nuevo Crosshair: punto de mira superpuesto sobre tus juegos (tambien en pantalla completa), con 10 formas, colores, contorno, brillo, presets, atajo de teclado y codigos para compartir.' } |
+@{ version = $version; url = 'https://github.com/Saayk/blad-boost/releases/latest/download/GameBoost_Setup.exe'; notes = 'Nuevo entrenador de punteria (Flicks, Gridshot, Tracking y Reaccion) y macros de teclado para Word y otras apps: un atajo escribe texto, pulsa teclas o abre programas.' } |
   ConvertTo-Json | Set-Content "$dist\version.json" -Encoding utf8
 
 if ($Deploy) {
