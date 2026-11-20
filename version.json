@@ -1,5 +1,5 @@
 ﻿{
     "url":  "https://github.com/Saayk/blad-boost/releases/latest/download/GameBoost_Setup.exe",
-    "version":  "1.2.0",
-    "notes":  "Nuevo entrenador de punteria (Flicks, Gridshot, Tracking y Reaccion) y macros de teclado para Word y otras apps: un atajo escribe texto, pulsa teclas o abre programas."
+    "version":  "1.2.1",
+    "notes":  "Macros: el atajo puede ser cualquier tecla o la rueda y los botones laterales del raton, y cada paso tiene tiempos ajustables (pulsacion, pausa entre letras y retardo inicial)."
 }
