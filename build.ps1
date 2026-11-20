@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 $dir = $PSScriptRoot
 $dist = Join-Path $dir 'dist'
 New-Item -ItemType Directory -Force $dist | Out-Null
-$version = '1.0.0'
+$version = '1.1.0'
 
 # ---------- icono (PNG dentro de ICO, 256 px) ----------
 if (-not (Test-Path "$dir\app.ico")) {
@@ -53,15 +53,16 @@ function Build($out, $extra, $src) {
 }
 
 $appRes = @("/resource:$dir\MainWindow.xaml,MainWindow.xaml")
-Build "$dir\GameBoost_test.exe" $appRes ($shared + "$dir\App.cs")
-Build "$dist\GameBoost.exe" ($appRes + "/win32manifest:$dir\app.manifest") ($shared + "$dir\App.cs")
+$appSrc = $shared + "$dir\Crosshair.cs" + "$dir\App.cs"
+Build "$dir\GameBoost_test.exe" $appRes $appSrc
+Build "$dist\GameBoost.exe" ($appRes + "/win32manifest:$dir\app.manifest") $appSrc
 
 $setupRes = @("/resource:$dir\Setup.xaml,Setup.xaml", "/resource:$dist\GameBoost.exe,GameBoost.exe")
 Build "$dir\Setup_test.exe" $setupRes ($shared + "$dir\Setup.cs")
 Build "$dist\GameBoost_Setup.exe" ($setupRes + "/win32manifest:$dir\app.manifest") ($shared + "$dir\Setup.cs")
 
 # ---------- version.json (subelo junto al instalador para publicar una actualizacion) ----------
-@{ version = $version; url = 'https://github.com/Saayk/blad-boost/releases/latest/download/GameBoost_Setup.exe'; notes = 'Primera version publica de Blad Boost: optimiza Windows para juegos (energia y CPU, graficos, red y perifericos), limpia el sistema, incluye Modo Juego y se actualiza sola.' } |
+@{ version = $version; url = 'https://github.com/Saayk/blad-boost/releases/latest/download/GameBoost_Setup.exe'; notes = 'Nuevo Crosshair: punto de mira superpuesto sobre tus juegos (tambien en pantalla completa), con 10 formas, colores, contorno, brillo, presets, atajo de teclado y codigos para compartir.' } |
   ConvertTo-Json | Set-Content "$dist\version.json" -Encoding utf8
 
 if ($Deploy) {

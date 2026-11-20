@@ -18,6 +18,7 @@ Este archivo lo lee Claude Code automáticamente al abrir una sesión en esta ca
 |---|---|
 | `App.cs`, `MainWindow.xaml` | Interfaz principal y lógica de la app |
 | `Core.cs` | Motor de optimización y detección de hardware |
+| `Crosshair.cs` | Crosshair superpuesto: ajustes (`crosshair.json`), dibujo, ventana transparente click-through y atajo global. La página está en `App.cs` (`BuildCrosshair`) |
 | `Services.cs` | Instalador, desinstalación y actualizaciones (`Feed` apunta a `version.json` en `main`) |
 | `Lang.cs`, `check-lang.ps1` | Traducciones y validador de cadenas (textos con `Tr("...")` / `Tf(...)`) |
 | `Setup.cs`, `Setup.xaml` | Instalador gráfico |
@@ -41,8 +42,7 @@ La app lee `version.json` de `main`; si la versión es mayor que la instalada, d
 El tag de la release es `v` + ese número (ej. `v1.0.1`) y el instalador debe llamarse exactamente `GameBoost_Setup.exe`.
 
 ## Estado actual
-- Versión **1.0.0**; la primera release aún no está publicada (Actions bloqueado por facturación → publicar con `publicar-release.ps1` en Windows o arreglar la facturación).
-- El README todavía muestra la insignia de versión 2.2.0 y debe corregirse a 1.0.0.
+- Versión **1.1.0** (añade el Crosshair). La v1.0.0 nunca se publicó y la release v1.1.0 tampoco: Actions está bloqueado por facturación → publicar con `publicar-release.ps1` en Windows o arreglar la facturación. Hasta que exista el instalador en Releases, las apps instaladas verán la actualización pero no podrán descargarla.
 
 ## Comandos útiles (en `.claude/commands/`)
 - `/sincronizar` — trae y revisa lo último del repo.

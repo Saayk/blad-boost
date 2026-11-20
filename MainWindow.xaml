@@ -230,6 +230,49 @@
       </Setter>
     </Style>
 
+    <Style x:Key="Sld" TargetType="Slider">
+      <Setter Property="Height" Value="22"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Slider">
+            <Grid Background="Transparent">
+              <Border Height="4" CornerRadius="2" Background="#262B39" VerticalAlignment="Center"/>
+              <Track x:Name="PART_Track">
+                <Track.DecreaseRepeatButton>
+                  <RepeatButton Command="Slider.DecreaseLarge" Focusable="False">
+                    <RepeatButton.Template>
+                      <ControlTemplate TargetType="RepeatButton">
+                        <Border Height="4" CornerRadius="2" Background="{StaticResource Accent}" VerticalAlignment="Center"/>
+                      </ControlTemplate>
+                    </RepeatButton.Template>
+                  </RepeatButton>
+                </Track.DecreaseRepeatButton>
+                <Track.IncreaseRepeatButton>
+                  <RepeatButton Command="Slider.IncreaseLarge" Focusable="False">
+                    <RepeatButton.Template>
+                      <ControlTemplate TargetType="RepeatButton">
+                        <Border Height="22" Background="Transparent"/>
+                      </ControlTemplate>
+                    </RepeatButton.Template>
+                  </RepeatButton>
+                </Track.IncreaseRepeatButton>
+                <Track.Thumb>
+                  <Thumb Width="16" Height="16">
+                    <Thumb.Template>
+                      <ControlTemplate TargetType="Thumb">
+                        <Ellipse Width="16" Height="16" Fill="White"/>
+                      </ControlTemplate>
+                    </Thumb.Template>
+                  </Thumb>
+                </Track.Thumb>
+              </Track>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
     <Style x:Key="Seg" TargetType="RadioButton">
       <Setter Property="Foreground" Value="{StaticResource Sub}"/>
       <Setter Property="Cursor" Value="Hand"/>
@@ -331,6 +374,7 @@
             <RadioButton x:Name="NavTweaks" Style="{StaticResource Nav}" Tag="&#xE9D9;" Content="Optimizar" GroupName="nav"/>
             <RadioButton x:Name="NavClean" Style="{StaticResource Nav}" Tag="&#xE74D;" Content="Limpieza" GroupName="nav"/>
             <RadioButton x:Name="NavBench" Style="{StaticResource Nav}" Tag="&#xE9D2;" Content="Benchmark" GroupName="nav"/>
+            <RadioButton x:Name="NavCross" Style="{StaticResource Nav}" Tag="&#xE81D;" Content="Crosshair" GroupName="nav"/>
             <RadioButton x:Name="NavTips" Style="{StaticResource Nav}" Tag="&#xEA80;" Content="Consejos" GroupName="nav"/>
             <RadioButton x:Name="NavApps" Style="{StaticResource Nav}" Tag="&#xE71D;" Content="Apps recomendadas" GroupName="nav"/>
             <TextBlock Text="SISTEMA" FontSize="10.5" Foreground="{StaticResource Mute}" Margin="10,22,0,8" FontWeight="SemiBold"/>
@@ -589,6 +633,65 @@
                 <StackPanel x:Name="BenchHistory" Margin="0,4"/>
               </Border>
               <TextBlock Text="El benchmark mide lo que GameBoost optimiza: CPU, precisión del temporizador, carga en segundo plano, memoria y red. Para medir los FPS reales dentro de un juego usa MSI Afterburner + RivaTuner (Apps recomendadas)." Style="{StaticResource Cap}" Margin="2,14,0,0"/>
+            </StackPanel>
+          </ScrollViewer>
+
+          <!-- ======== CROSSHAIR ======== -->
+          <ScrollViewer x:Name="PageCross" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="32,0,32,28">
+              <TextBlock Text="Crosshair" Style="{StaticResource H1}"/>
+              <TextBlock Text="Un punto de mira siempre visible encima de tu pantalla y de tus juegos. Personalízalo al detalle y actívalo con un atajo." Style="{StaticResource Cap}" Margin="0,4,0,0"/>
+              <Border Style="{StaticResource CardB}" Margin="0,18,0,0">
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="240"/>
+                    <ColumnDefinition Width="24"/>
+                    <ColumnDefinition/>
+                  </Grid.ColumnDefinitions>
+                  <Border x:Name="CrossPreviewBox" Width="240" Height="240" CornerRadius="12" BorderBrush="{StaticResource Line}" BorderThickness="1" ClipToBounds="True">
+                    <Border.Background>
+                      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#222B3C" Offset="0"/>
+                        <GradientStop Color="#0B0E14" Offset="1"/>
+                      </LinearGradientBrush>
+                    </Border.Background>
+                  </Border>
+                  <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <TextBlock Text="Estado" Style="{StaticResource H2}"/>
+                    <TextBlock x:Name="CrossStatus" Style="{StaticResource Cap}" Margin="0,4,0,16"/>
+                    <StackPanel Orientation="Horizontal">
+                      <CheckBox x:Name="CrossSwitch" Style="{StaticResource Switch}"/>
+                      <TextBlock Text="Mostrar crosshair" FontWeight="SemiBold" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    </StackPanel>
+                    <WrapPanel x:Name="CrossActions" Margin="0,20,0,0"/>
+                  </StackPanel>
+                </Grid>
+              </Border>
+              <TextBlock Text="FORMA" Style="{StaticResource Sec}"/>
+              <Border Style="{StaticResource CardB}">
+                <WrapPanel x:Name="CrossStyles"/>
+              </Border>
+              <TextBlock Text="PRESETS" Style="{StaticResource Sec}"/>
+              <Border Style="{StaticResource CardB}">
+                <WrapPanel x:Name="CrossPresets"/>
+              </Border>
+              <TextBlock Text="APARIENCIA" Style="{StaticResource Sec}"/>
+              <Border Style="{StaticResource CardB}" Padding="0">
+                <StackPanel x:Name="CrossLook" Margin="0,4"/>
+              </Border>
+              <TextBlock Text="PUNTO, CONTORNO Y BRILLO" Style="{StaticResource Sec}"/>
+              <Border Style="{StaticResource CardB}" Padding="0">
+                <StackPanel x:Name="CrossFx" Margin="0,4"/>
+              </Border>
+              <TextBlock Text="POSICIÓN" Style="{StaticResource Sec}"/>
+              <Border Style="{StaticResource CardB}" Padding="0">
+                <StackPanel x:Name="CrossPos" Margin="0,4"/>
+              </Border>
+              <TextBlock Text="ACTIVACIÓN" Style="{StaticResource Sec}"/>
+              <Border Style="{StaticResource CardB}" Padding="0">
+                <StackPanel x:Name="CrossBehave" Margin="0,4"/>
+              </Border>
+              <TextBlock Text="Se ve sobre juegos en ventana sin bordes y en pantalla completa de Windows 10/11. Si un juego usa pantalla completa exclusiva y no aparece, cámbialo a modo sin bordes. GameBoost no toca el juego: solo dibuja una ventana transparente encima. Aun así, comprueba que las normas y el anticheat de tu juego permiten overlays." Style="{StaticResource Cap}" Margin="2,18,0,0"/>
             </StackPanel>
           </ScrollViewer>
 

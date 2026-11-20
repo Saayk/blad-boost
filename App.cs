@@ -26,9 +26,9 @@ using WF = System.Windows.Forms;
 [assembly: AssemblyProduct("GameBoost")]
 [assembly: AssemblyCopyright("© 2026 BLAD Studios")]
 [assembly: AssemblyTrademark("GameBoost es una marca de BLAD Studios")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
-[assembly: AssemblyInformationalVersion("1.0.0")]
+[assembly: AssemblyVersion("1.1.0.0")]
+[assembly: AssemblyFileVersion("1.1.0.0")]
+[assembly: AssemblyInformationalVersion("1.1.0")]
 
 namespace GameBoost
 {
@@ -196,6 +196,7 @@ namespace GameBoost
             BuildClean();
             BuildGeneral();
             BuildSettings();
+            BuildCrosshair();
             WireGames();
             WireDashboard();
             WireBench();
@@ -338,6 +339,7 @@ namespace GameBoost
             var menu = new WF.ContextMenuStrip();
             menu.Items.Add(Tr("Abrir GameBoost"), null, (s, e) => ShowWindow());
             trayModeItem = menu.Items.Add(Tr("Activar Modo Juego"), null, (s, e) => { if (sessionActive) EndSession(true); else StartSession(null, false, null); });
+            menu.Items.Add(Tr("Mostrar/ocultar crosshair"), null, (s, e) => crossHost.Toggle());
             menu.Items.Add(new WF.ToolStripSeparator());
             menu.Items.Add(Tr("Salir"), null, (s, e) => ExitApp());
             tray.ContextMenuStrip = menu;
@@ -391,6 +393,7 @@ namespace GameBoost
             }
             Store.Save("settings.json", settings);
             Store.Save("games.json", games);
+            crossHost.Dispose();
             if (tray != null) { tray.Visible = false; tray.Dispose(); }
             Application.Current.Shutdown();
         }
@@ -403,7 +406,7 @@ namespace GameBoost
             E<Button>("BtnClose").Click += (s, e) => win.Close();
         }
 
-        readonly string[] pageNames = { "Dash", "Games", "Tweaks", "Clean", "Bench", "Tips", "Apps", "Settings" };
+        readonly string[] pageNames = { "Dash", "Games", "Tweaks", "Clean", "Bench", "Cross", "Tips", "Apps", "Settings" };
         void WireNav()
         {
             foreach (var n in pageNames)
@@ -1930,6 +1933,7 @@ namespace GameBoost
             E<TextBlock>("SessSub").Text = active ? (sessionName ?? Tr("recién activado")) : Tr("Pulsa Jugar en cualquier juego");
             E<TextBlock>("GameModeText").Text = active ? Tr("Desactivar Modo Juego") : Tr("Activar Modo Juego");
             E<TextBlock>("GameModeIcon").Text = active ? "" : "";
+            if (crossHost != null) { crossHost.SetGameActive(active); SyncCrossUi(); }
             var b = E<Button>("BtnGameMode");
             b.Background = active ? Hex("#1F2A22") : Br("AccentGrad");
             b.BorderBrush = active ? Hex("#2E5C3E") : null;
@@ -2121,6 +2125,268 @@ namespace GameBoost
             });
         }
 
+        // ============================================================ crosshair
+        CrosshairHost crossHost;
+        CrosshairVisual crossPreview;
+        CheckBox crossSwitch;
+
+        CrosshairLook CL { get { return crossHost.S.Look; } }
+
+        void BuildCrosshair()
+        {
+            crossHost = new CrosshairHost(Store.Load<CrosshairSettings>("crosshair.json"), !Program.SelfTest);
+            crossHost.Toggled += () =>
+            {
+                SyncCrossUi();
+                Toast(crossHost.S.Enabled ? Tr("Crosshair activado") : Tr("Crosshair desactivado"), crossHost.S.Enabled ? 0 : 1);
+            };
+
+            crossPreview = new CrosshairVisual { Look = CL };
+            E<Border>("CrossPreviewBox").Child = crossPreview;
+
+            crossSwitch = E<CheckBox>("CrossSwitch");
+            crossSwitch.Click += (s, e) =>
+            {
+                crossHost.S.Enabled = crossSwitch.IsChecked == true;
+                crossHost.Refresh(); crossHost.Save(); SyncCrossUi();
+            };
+
+            var acts = E<WrapPanel>("CrossActions");
+            acts.Children.Add(CrossBtn(Tr("Copiar código"), () =>
+            {
+                try { Clipboard.SetText(CL.Export()); Toast(Tr("Código copiado. Compártelo con quien quieras."), 0); }
+                catch (Exception ex) { Toast(ex.Message, 3); }
+            }));
+            acts.Children.Add(CrossBtn(Tr("Pegar código"), () =>
+            {
+                CrosshairLook imp = null;
+                try { imp = CrosshairLook.Import(Clipboard.GetText()); } catch { }
+                if (imp == null) { Toast(Tr("El portapapeles no contiene un código de crosshair válido."), 3); return; }
+                CL.CopyFrom(imp);
+                CrossRefreshAll();
+                Toast(Tr("Crosshair importado"), 0);
+            }));
+            acts.Children.Add(CrossBtn(Tr("Restablecer"), () => { CL.CopyFrom(new CrosshairLook()); CrossRefreshAll(); }));
+
+            var pre = E<WrapPanel>("CrossPresets");
+            foreach (var p in CrosshairPresets.All)
+            {
+                var preset = p;
+                pre.Children.Add(CrossBtn(Tr(preset.Name), () => { CL.CopyFrom(preset.Look); CrossRefreshAll(); }));
+            }
+
+            RebuildCrossStyles();
+            BuildCrossRows();
+            SyncCrossUi();
+        }
+
+        Button CrossBtn(string text, Action click)
+        {
+            var b = Btn(text, "Secondary", click);
+            b.Margin = new Thickness(0, 0, 10, 10);
+            return b;
+        }
+
+        // Cambio hecho desde la interfaz: aplica a la pantalla, a la vista previa y guarda.
+        void CrossChanged()
+        {
+            crossHost.Refresh();
+            crossHost.SaveSoon();
+            crossPreview.InvalidateVisual();
+            SyncCrossUi();
+        }
+
+        // Tras importar un código, aplicar un preset o restablecer: reconstruye todos los controles.
+        void CrossRefreshAll()
+        {
+            RebuildCrossStyles();
+            BuildCrossRows();
+            CrossChanged();
+        }
+
+        void SyncCrossUi()
+        {
+            if (crossHost == null || crossSwitch == null) return;
+            var s = crossHost.S;
+            crossSwitch.IsChecked = s.Enabled;
+            string st = !s.Enabled ? Tr("Crosshair apagado")
+                : crossHost.Showing ? Tr("Crosshair visible sobre la pantalla")
+                : Program.SelfTest ? Tr("Crosshair visible sobre la pantalla")
+                : Tr("Activado: se mostrará cuando juegues (Modo Juego)");
+            if (s.Hotkey != "None") st += " · " + Tf("Atajo: {0}", s.Hotkey);
+            E<TextBlock>("CrossStatus").Text = st;
+        }
+
+        void RebuildCrossStyles()
+        {
+            var wp = E<WrapPanel>("CrossStyles");
+            wp.Children.Clear();
+            for (int i = 0; i < CrosshairVisual.StyleNames.Length; i++)
+            {
+                int idx = i;
+                var cell = new Grid { Width = 64, Height = 64 };
+                if (idx == 9) cell.Children.Add(Glyph("", 22, Br("Sub")));
+                else
+                {
+                    var tl = CL.Clone();
+                    tl.Style = idx; tl.Size = 10; tl.Gap = 3; tl.Thickness = 2; tl.Rotation = 0; tl.Opacity = 100;
+                    tl.Outline = false; tl.Glow = false; tl.Dot = idx == 4; tl.DotSize = idx == 4 ? 6 : 3; tl.DotOwnColor = false;
+                    cell.Children.Add(new CrosshairVisual { Look = tl });
+                }
+                var box = new Border { Width = 64, Height = 64, CornerRadius = new CornerRadius(10), Background = Hex("#0E1117"), Child = cell,
+                    BorderThickness = new Thickness(2), BorderBrush = CL.Style == idx ? Br("Accent") : Br("Line") };
+                var tile = new StackPanel { Margin = new Thickness(0, 0, 12, 12), Cursor = Cursors.Hand, Background = Brushes.Transparent, Width = 72 };
+                tile.Children.Add(box);
+                tile.Children.Add(new TextBlock { Text = Tr(CrosshairVisual.StyleNames[idx]), FontSize = 11.5, Foreground = CL.Style == idx ? Br("Text") : Br("Sub"),
+                    HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 6, 0, 0) });
+                tile.MouseLeftButtonUp += (s, e) =>
+                {
+                    if (idx == 9 && !PickCrossImage()) return;
+                    CL.Style = idx;
+                    RebuildCrossStyles();
+                    CrossChanged();
+                };
+                wp.Children.Add(tile);
+            }
+        }
+
+        bool PickCrossImage()
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = Tr("Elige la imagen de tu crosshair"),
+                Filter = Tr("Imágenes") + "|*.png;*.jpg;*.jpeg;*.bmp;*.gif"
+            };
+            if (dlg.ShowDialog(win) != true) return false;
+            CL.Image = dlg.FileName;
+            return true;
+        }
+
+        void BuildCrossRows()
+        {
+            var look = E<StackPanel>("CrossLook"); look.Children.Clear();
+            var fx = E<StackPanel>("CrossFx"); fx.Children.Clear();
+            var pos = E<StackPanel>("CrossPos"); pos.Children.Clear();
+            var beh = E<StackPanel>("CrossBehave"); beh.Children.Clear();
+            var s = crossHost.S;
+
+            CrossColor(look, "Color", "Color principal de la mira.", () => CL.Color, v => CL.Color = v, true);
+            CrossSlider(look, "Opacidad", "Qué tan visible es la mira.", 10, 100, () => CL.Opacity, v => CL.Opacity = v, "%", false);
+            CrossSlider(look, "Tamaño", "Largo de cada brazo o radio de la forma.", 1, 100, () => CL.Size, v => CL.Size = v, " px", false);
+            CrossSlider(look, "Grosor", "Grosor de las líneas.", 1, 12, () => CL.Thickness, v => CL.Thickness = v, " px", false);
+            CrossSlider(look, "Separación central", "Hueco en el centro de la cruz, el aspa y el chevron.", 0, 50, () => CL.Gap, v => CL.Gap = v, " px", false);
+            CrossSlider(look, "Rotación", "Gira toda la mira.", 0, 359, () => CL.Rotation, v => CL.Rotation = v, "°", false);
+            CrossSlider(look, "Tamaño de la imagen", "Solo para la forma Imagen (PNG con transparencia).", 8, 256, () => CL.ImageSize, v => CL.ImageSize = v, " px", false);
+
+            CrossToggle(fx, "Punto central", "Añade un punto en el centro.", () => CL.Dot, v => CL.Dot = v, true);
+            CrossSlider(fx, "Tamaño del punto", null, 1, 24, () => CL.DotSize, v => CL.DotSize = v, " px", false);
+            CrossToggle(fx, "Punto de otro color", "Usa un color distinto para el punto.", () => CL.DotOwnColor, v => CL.DotOwnColor = v, false);
+            CrossColor(fx, "Color del punto", null, () => CL.DotColor, v => CL.DotColor = v, false);
+            CrossToggle(fx, "Contorno", "Borde oscuro para que la mira se vea sobre cualquier fondo.", () => CL.Outline, v => CL.Outline = v, false);
+            CrossSlider(fx, "Grosor del contorno", null, 1, 4, () => CL.OutlineWidth, v => CL.OutlineWidth = v, " px", false);
+            CrossColor(fx, "Color del contorno", null, () => CL.OutlineColor, v => CL.OutlineColor = v, false);
+            CrossToggle(fx, "Brillo", "Halo suave alrededor de la mira.", () => CL.Glow, v => CL.Glow = v, false);
+
+            CrossSlider(pos, "Desplazamiento horizontal", "Mueve la mira a la izquierda (−) o a la derecha (+) del centro.", -400, 400, () => s.OffsetX, v => s.OffsetX = v, " px", true);
+            CrossSlider(pos, "Desplazamiento vertical", "Mueve la mira hacia arriba (−) o hacia abajo (+) del centro.", -400, 400, () => s.OffsetY, v => s.OffsetY = v, " px", false);
+            var center = Btn(Tr("Centrar"), "Secondary", () => { s.OffsetX = 0; s.OffsetY = 0; BuildCrossRows(); CrossChanged(); });
+            pos.Children.Add(Row(Tr("Centrar la mira"), Tr("Vuelve al centro exacto del monitor."), null, center, false));
+            var screens = WF.Screen.AllScreens;
+            if (screens.Length > 1)
+            {
+                var opts = new List<string[]> { new[] { "-1", Tr("Principal") } };
+                for (int i = 0; i < screens.Length; i++) opts.Add(new[] { i.ToString(), Tf("Pantalla {0}", i + 1) });
+                CrossSeg(pos, "Monitor", "En qué pantalla se dibuja la mira.", "crossmon", opts, s.Monitor.ToString(),
+                    c => { s.Monitor = int.Parse(c); CrossChanged(); }, false);
+            }
+
+            CrossToggle(beh, "Mostrar solo mientras juegas", "Se muestra cuando GameBoost detecta un juego (Modo Juego activo) y se oculta al salir.",
+                () => s.OnlyInGame, v => s.OnlyInGame = v, true);
+            var keys = new List<string[]>();
+            foreach (var k in CrosshairHost.Hotkeys) keys.Add(new[] { k, k == "None" ? Tr("Ninguno") : k });
+            CrossSeg(beh, "Atajo de teclado", "Activa o desactiva la mira desde cualquier juego. Elige uno que el juego no use.", "crosskey", keys, s.Hotkey,
+                c =>
+                {
+                    s.Hotkey = c;
+                    bool ok = crossHost.ApplyHotkey();
+                    CrossChanged();
+                    if (!ok) Toast(Tr("No se pudo registrar ese atajo: otra aplicación lo usa. Prueba con otro."), 3);
+                }, false);
+        }
+
+        void CrossToggle(StackPanel list, string title, string desc, Func<bool> get, Action<bool> set, bool first)
+        {
+            var sw = new CheckBox { Style = St("Switch"), IsChecked = get() };
+            sw.Click += (s, e) => { set(sw.IsChecked == true); CrossChanged(); };
+            list.Children.Add(Row(Tr(title), Tr(desc), null, sw, first));
+        }
+
+        void CrossSlider(StackPanel list, string title, string desc, int min, int max, Func<int> get, Action<int> set, string suffix, bool first)
+        {
+            var sl = new Slider { Style = St("Sld"), Minimum = min, Maximum = max, Value = get(), Width = 200, SmallChange = 1, LargeChange = Math.Max(1, (max - min) / 10), IsSnapToTickEnabled = true, TickFrequency = 1 };
+            var val = new TextBlock { Width = 58, TextAlignment = TextAlignment.Right, Foreground = Br("Sub"), VerticalAlignment = VerticalAlignment.Center, Text = get() + suffix };
+            sl.ValueChanged += (s, e) =>
+            {
+                int v = (int)Math.Round(sl.Value);
+                val.Text = v + suffix;
+                set(v);
+                CrossChanged();
+            };
+            var right = new StackPanel { Orientation = Orientation.Horizontal };
+            right.Children.Add(sl); right.Children.Add(val);
+            list.Children.Add(Row(Tr(title), Tr(desc), null, right, first));
+        }
+
+        void CrossColor(StackPanel list, string title, string desc, Func<string> get, Action<string> set, bool first)
+        {
+            var right = new StackPanel { Orientation = Orientation.Horizontal };
+            var hex = new TextBox { Width = 86, Text = get(), Margin = new Thickness(6, 0, 0, 0), FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 12, VerticalContentAlignment = VerticalAlignment.Center };
+            var swatches = new List<Shapes.Ellipse>();
+            Action refresh = () =>
+            {
+                foreach (var el in swatches)
+                {
+                    bool on = string.Equals((string)el.Tag, get(), StringComparison.OrdinalIgnoreCase);
+                    el.Stroke = on ? Br("Text") : Br("Line");
+                    el.StrokeThickness = on ? 2 : 1;
+                }
+            };
+            Action<string> apply = c => { set(c); hex.Text = c; refresh(); RebuildCrossStyles(); CrossChanged(); };
+            foreach (var c in CrosshairVisual.Palette)
+            {
+                string cc = c;
+                var el = new Shapes.Ellipse { Width = 20, Height = 20, Fill = Hex(c), Tag = c, Margin = new Thickness(0, 0, 6, 0), Cursor = Cursors.Hand };
+                el.MouseLeftButtonUp += (s, e) => apply(cc);
+                swatches.Add(el); right.Children.Add(el);
+            }
+            right.Children.Add(hex);
+            Action commit = () =>
+            {
+                string t = hex.Text.Trim();
+                if (!t.StartsWith("#")) t = "#" + t;
+                Color col;
+                if (CrosshairLook.TryColor(t, out col)) apply(t.ToUpperInvariant()); else hex.Text = get();
+            };
+            hex.LostFocus += (s, e) => commit();
+            hex.KeyDown += (s, e) => { if (e.Key == Key.Enter) commit(); };
+            refresh();
+            list.Children.Add(Row(Tr(title), Tr(desc), null, right, first));
+        }
+
+        void CrossSeg(StackPanel list, string title, string desc, string group, List<string[]> opts, string current, Action<string> set, bool first)
+        {
+            var seg = new WrapPanel { MaxWidth = 440 };
+            foreach (var o in opts)
+            {
+                string code = o[0];
+                var rb = new RadioButton { Style = St("Seg"), Content = o[1], GroupName = group, IsChecked = code == current };
+                rb.Checked += (s, e) => set(code);
+                seg.Children.Add(rb);
+            }
+            var b = new Border { Background = Hex("#0E1117"), CornerRadius = new CornerRadius(9), Padding = new Thickness(3), BorderBrush = Br("Line"), BorderThickness = new Thickness(1), Child = seg };
+            list.Children.Add(Row(Tr(title), Tr(desc), null, b, first));
+        }
+
         // ============================================================ self test
         public void RunSelfTest()
         {
@@ -2137,6 +2403,8 @@ namespace GameBoost
                 () => Nav("Games"), () => snap("games"),
                 () => Nav("Tweaks"), () => snap("tweaks"),
                 () => Nav("Bench"), () => snap("bench"),
+                () => Nav("Cross"), () => snap("cross"),
+                () => { var sv = E<ScrollViewer>("PageCross"); sv.ScrollToVerticalOffset(520); }, () => snap("cross2"),
                 () => Nav("Apps"), () => {}, () => snap("apps"),
                 () => Nav("Tips"), () => snap("tips"),
                 () => Nav("Settings"), () => snap("settings"),

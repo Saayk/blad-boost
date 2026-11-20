@@ -11,6 +11,13 @@ foreach ($f in 'App.cs', 'Services.cs', 'Setup.cs') {
 }
 # títulos de métricas del benchmark y categorías / items del núcleo
 $app = Get-Content "$dir\App.cs" -Raw -Encoding UTF8
+# crosshair: textos pasados a los helpers de filas (CrossToggle/Slider/Color/Seg) y nombres de formas y presets
+foreach ($m in [regex]::Matches($app, 'Cross(?:Toggle|Slider|Color|Seg)\(\s*\w+,\s*"((?:[^"\\]|\\.)*)"(?:,\s*"((?:[^"\\]|\\.)*)")?')) {
+  [void]$used.Add($m.Groups[1].Value); if ($m.Groups[2].Success) { [void]$used.Add($m.Groups[2].Value) }
+}
+$ch = Get-Content "$dir\Crosshair.cs" -Raw -Encoding UTF8
+foreach ($m in [regex]::Matches($ch, '\bP\("((?:[^"\\]|\\.)*)"')) { [void]$used.Add($m.Groups[1].Value) }
+foreach ($m in [regex]::Matches($ch, 'StyleNames =\s*\{([^}]*)\}')) { foreach ($c in [regex]::Matches($m.Groups[1].Value, '"([^"]+)"')) { [void]$used.Add($c.Groups[1].Value) } }
 foreach ($m in [regex]::Matches($app, 'Title = "((?:[^"\\]|\\.)*)"')) { [void]$used.Add($m.Groups[1].Value) }
 $core = Get-Content "$dir\Core.cs" -Raw -Encoding UTF8
 foreach ($m in [regex]::Matches($core, 'Add\("\w+", \w+, "((?:[^"\\]|\\.)*)",\s*"((?:[^"\\]|\\.)*)"')) { [void]$used.Add($m.Groups[1].Value); [void]$used.Add($m.Groups[2].Value) }

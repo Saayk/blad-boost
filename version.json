@@ -1,5 +1,5 @@
 ﻿{
     "url":  "https://github.com/Saayk/blad-boost/releases/latest/download/GameBoost_Setup.exe",
-    "version":  "1.0.0",
-    "notes":  "Primera version publica de Blad Boost: optimiza Windows para juegos (energia y CPU, graficos, red y perifericos), limpia el sistema, incluye Modo Juego y se actualiza sola."
+    "version":  "1.1.0",
+    "notes":  "Nuevo Crosshair: punto de mira superpuesto sobre tus juegos (tambien en pantalla completa), con 10 formas, colores, contorno, brillo, presets, atajo de teclado y codigos para compartir."
 }

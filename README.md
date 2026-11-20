@@ -5,7 +5,7 @@
 **Más FPS, menos tirones. Un optimizador de PC para jugadores, hecho por BLAD Studios.**
 
 ![Plataforma](https://img.shields.io/badge/plataforma-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.0-brightgreen)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.1.0-brightgreen)
 ![Lenguaje](https://img.shields.io/badge/C%23-WPF-512BD4?logo=dotnet&logoColor=white)
 ![Licencia](https://img.shields.io/badge/licencia-MIT-blue)
 
@@ -30,6 +30,7 @@ Pensada para quien quiere mejor rendimiento sin pasar horas en foros y guías de
 | 🚀 | **Modo Juego** | Un clic: pausa servicios de Windows durante la partida, cierra apps en segundo plano y libera RAM en espera. |
 | 🛠️ | **Optimizar** | Ajustes del sistema según tu hardware (Intel híbrido, Ryzen X3D, portátil, gráficos integrados o dedicados…). |
 | 🧹 | **Limpieza** | Borra temporales y volcados de errores, limpia la caché DNS y revisa el espacio de tu disco. |
+| 🎯 | **Crosshair** | Punto de mira superpuesto sobre tu pantalla y tus juegos (también en pantalla completa): 10 formas (con imagen propia), colores, contorno, brillo, presets, imagen propia, atajo de teclado y códigos para compartir. |
 | 📊 | **Benchmark** | Mide el rendimiento de tu PC (≈15 s) y guarda un historial para comparar antes y después. |
 | 💡 | **Consejos** | Recomendaciones personalizadas: XMP/EXPO, drivers de GPU, ratón a 1000 Hz+, batería, y más. |
 | 📦 | **Apps recomendadas** | MSI Afterburner, HWiNFO, CPU-Z, CrystalDiskInfo, OBS Studio y otras herramientas útiles, con enlaces oficiales. |
@@ -61,6 +62,7 @@ Genera `GameBoost.exe` y `GameBoost_Setup.exe` en `dist/` y actualiza `version.j
 blad-boost/
 ├── App.cs · MainWindow.xaml     Interfaz principal y lógica de la app
 ├── Core.cs                      Motor de optimización y detección de hardware
+├── Crosshair.cs                 Punto de mira superpuesto (ventana, dibujo y ajustes)
 ├── Services.cs                  Instalador, desinstalación y actualizaciones
 ├── Lang.cs · check-lang.ps1     Traducciones y validador de cadenas
 ├── Setup.cs · Setup.xaml        Instalador gráfico
