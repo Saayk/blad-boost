@@ -197,6 +197,8 @@ namespace GameBoost
             BuildGeneral();
             BuildSettings();
             BuildCrosshair();
+            BuildAim();
+            BuildMacros();
             WireGames();
             WireDashboard();
             WireBench();
@@ -394,6 +396,7 @@ namespace GameBoost
             Store.Save("settings.json", settings);
             Store.Save("games.json", games);
             crossHost.Dispose();
+            macroHost.Dispose();
             if (tray != null) { tray.Visible = false; tray.Dispose(); }
             Application.Current.Shutdown();
         }
@@ -406,7 +409,7 @@ namespace GameBoost
             E<Button>("BtnClose").Click += (s, e) => win.Close();
         }
 
-        readonly string[] pageNames = { "Dash", "Games", "Tweaks", "Clean", "Bench", "Cross", "Tips", "Apps", "Settings" };
+        readonly string[] pageNames = { "Dash", "Games", "Tweaks", "Clean", "Bench", "Cross", "Aim", "Macros", "Tips", "Apps", "Settings" };
         void WireNav()
         {
             foreach (var n in pageNames)
@@ -429,6 +432,7 @@ namespace GameBoost
                 p.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)));
                 tt.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(220)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
             }
+            if (aimTrainer != null) { if (name == "Aim") aimTrainer.SetLook(CL); else aimTrainer.Stop(); }
             if (name == "Clean" && Cleaner.Items.All(i => i.Size < 0)) Analyze();
             if (name == "Apps") Bg(() => { var inst = Sys.InstalledApps(); Ui(() => { installedApps = inst; BuildApps(); }); });
         }
@@ -1934,6 +1938,7 @@ namespace GameBoost
             E<TextBlock>("GameModeText").Text = active ? Tr("Desactivar Modo Juego") : Tr("Activar Modo Juego");
             E<TextBlock>("GameModeIcon").Text = active ? "" : "";
             if (crossHost != null) { crossHost.SetGameActive(active); SyncCrossUi(); }
+            if (macroHost != null) macroHost.SetPaused(active);
             var b = E<Button>("BtnGameMode");
             b.Background = active ? Hex("#1F2A22") : Br("AccentGrad");
             b.BorderBrush = active ? Hex("#2E5C3E") : null;
@@ -2387,6 +2392,367 @@ namespace GameBoost
             list.Children.Add(Row(Tr(title), Tr(desc), null, b, first));
         }
 
+        Border SegBox(string group, IEnumerable<string[]> opts, string current, Action<string> set)
+        {
+            var seg = new WrapPanel();
+            foreach (var o in opts)
+            {
+                string code = o[0];
+                var rb = new RadioButton { Style = St("Seg"), Content = o[1], GroupName = group, IsChecked = code == current };
+                rb.Checked += (s, e) => set(code);
+                seg.Children.Add(rb);
+            }
+            return new Border { Background = Hex("#0E1117"), CornerRadius = new CornerRadius(9), Padding = new Thickness(3), BorderBrush = Br("Line"),
+                                BorderThickness = new Thickness(1), Child = seg, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
+        }
+
+        // ============================================================ entrenador de puntería
+        AimTrainer aimTrainer;
+        AimHistory aimHist;
+        string aimMode = "flick";
+        int aimSize = 1;
+
+        void BuildAim()
+        {
+            aimHist = Store.Load<AimHistory>("aim.json");
+            if (aimHist.Items == null) aimHist.Items = new List<AimResult>();
+            aimTrainer = new AimTrainer(CL);
+            aimTrainer.Finished += OnAimResult;
+            E<Border>("AimHost").Child = aimTrainer;
+
+            var bar = E<WrapPanel>("AimModes");
+            var modes = AimTrainer.Modes.Select(m => new[] { m, Tr(AimTrainer.ModeName(m)) });
+            bar.Children.Add(SegBox("aimmode", modes, aimMode, c =>
+            {
+                aimMode = c; aimTrainer.SetMode(c);
+                E<TextBlock>("AimModeDesc").Text = Tr(AimTrainer.ModeDesc(c));
+            }));
+            var sizes = new[] { new[] { "0", Tr("Pequeño") }, new[] { "1", Tr("Mediano") }, new[] { "2", Tr("Grande") } };
+            var sb = SegBox("aimsize", sizes, aimSize.ToString(), c => { aimSize = int.Parse(c); aimTrainer.SetSize(aimSize); });
+            sb.Margin = new Thickness(12, 0, 0, 0);
+            bar.Children.Add(sb);
+            E<TextBlock>("AimModeDesc").Text = Tr(AimTrainer.ModeDesc(aimMode));
+            E<Button>("BtnAimFull").Click += (s, e) => OpenAimFullscreen();
+            BuildAimStats();
+        }
+
+        void OnAimResult(AimResult r)
+        {
+            aimHist.Items.Add(r);
+            if (aimHist.Items.Count > 300) aimHist.Items.RemoveRange(0, aimHist.Items.Count - 300);
+            if (!Program.SelfTest) Store.Save("aim.json", aimHist);
+            BuildAimStats();
+        }
+
+        void BuildAimStats()
+        {
+            var list = E<StackPanel>("AimStats");
+            list.Children.Clear();
+            bool first = true;
+            foreach (var m in AimTrainer.Modes)
+            {
+                string mode = m;
+                var plays = aimHist.Items.Where(x => x.Mode == mode).ToList();
+                string unit = AimTrainer.LowerIsBetter(mode) ? " ms" : "";
+                string right = "—", desc = Tr("Sin partidas todavía");
+                if (plays.Count > 0)
+                {
+                    int best = AimTrainer.LowerIsBetter(mode) ? plays.Min(x => x.Score) : plays.Max(x => x.Score);
+                    right = Tf("Mejor {0} · Última {1}", best + unit, plays[plays.Count - 1].Score + unit);
+                    desc = Tf("{0} partidas", plays.Count);
+                }
+                list.Children.Add(Row(Tr(AimTrainer.ModeName(mode)), desc, null, Txt(right, 13, Br("Text")), first));
+                first = false;
+            }
+        }
+
+        void OpenAimFullscreen()
+        {
+            aimTrainer.Stop();
+            var t = new AimTrainer(CL) { EscHint = true };
+            t.SetSize(aimSize);
+            t.SetMode(aimMode);
+            t.Finished += OnAimResult;
+            var w = new Window
+            {
+                Title = "GameBoost", WindowStyle = WindowStyle.None, ResizeMode = ResizeMode.NoResize, WindowState = WindowState.Maximized,
+                Topmost = true, ShowInTaskbar = false, Background = Hex("#0B0E14"), Content = t, Owner = win.IsVisible ? win : null
+            };
+            w.KeyDown += (s, e) => { if (e.Key == Key.Escape) w.Close(); };
+            w.Show();
+            w.Activate();
+        }
+
+        // ============================================================ macros
+        MacroHost macroHost;
+
+        void BuildMacros()
+        {
+            var data = Store.Load<MacroList>("macros.json");
+            macroHost = new MacroHost(data, !Program.SelfTest, MacroBlock);
+            macroHost.Notify += (m, k) => Ui(() => Toast(m, k));
+
+            E<Button>("BtnNewMacro").Click += (s, e) =>
+            {
+                var m = new Macro { Name = Tr("Nueva macro") };
+                m.Steps.Add(new MacroStep { Kind = "text" });
+                macroHost.Data.Items.Add(m);
+                MacroSaved(false);
+                RebuildMacros();
+            };
+            var ex = E<WrapPanel>("MacroExamples");
+            for (int i = 0; i < 5; i++)
+            {
+                int idx = i;
+                var b = Btn("+ " + MacroExample(idx).Name, "Secondary", () => AddMacroExample(idx));
+                b.Margin = new Thickness(0, 0, 10, 10);
+                ex.Children.Add(b);
+            }
+            RebuildMacros();
+            var failed = macroHost.Register();
+            if (failed.Count > 0) Log(Tf("No se pudo registrar el atajo de: {0}. Otra app lo usa o está repetido.", string.Join(", ", failed)));
+        }
+
+        // Si hay un juego delante o el Modo Juego está activo, la macro no se ejecuta.
+        string MacroBlock()
+        {
+            if (sessionActive) return Tr("Modo Juego activo");
+            string p = MacroHost.ForegroundProcess();
+            if (p != null && (KnownGames.ContainsKey(p) || games.Games.Any(g => string.Equals(g.Proc, p, StringComparison.OrdinalIgnoreCase))))
+                return GameName(p);
+            return null;
+        }
+
+        Macro MacroExample(int i)
+        {
+            var m = new Macro();
+            switch (i)
+            {
+                case 0:
+                    m.Name = Tr("Insertar fecha y hora"); m.Hotkey = "Ctrl+Alt+D";
+                    m.Steps.Add(new MacroStep { Kind = "text", Value = "{fecha} {hora}" });
+                    break;
+                case 1:
+                    m.Name = Tr("Firma de correo"); m.Hotkey = "Ctrl+Alt+F";
+                    m.Steps.Add(new MacroStep { Kind = "text", Value = Tr("Un saludo,") + "\n" + Tr("[Tu nombre]") });
+                    break;
+                case 2:
+                    m.Name = Tr("Pegar sin formato"); m.Hotkey = "Ctrl+Alt+V";
+                    m.Steps.Add(new MacroStep { Kind = "text", Value = "{portapapeles}" });
+                    break;
+                case 3:
+                    m.Name = Tr("Negrita y subrayado"); m.Hotkey = "Ctrl+Alt+B";
+                    m.Steps.Add(new MacroStep { Kind = "keys", Value = "Ctrl+B" });
+                    m.Steps.Add(new MacroStep { Kind = "keys", Value = "Ctrl+U" });
+                    break;
+                default:
+                    m.Name = Tr("Abrir Word"); m.Hotkey = "Ctrl+Alt+W";
+                    m.Steps.Add(new MacroStep { Kind = "open", Value = "winword" });
+                    break;
+            }
+            return m;
+        }
+
+        void AddMacroExample(int i)
+        {
+            var m = MacroExample(i);
+            macroHost.Data.Items.Add(m);
+            MacroSaved(true);
+            RebuildMacros();
+            Toast(Tf("Macro añadida: {0} ({1})", m.Name, m.Hotkey), 0);
+        }
+
+        void MacroSaved(bool reRegister)
+        {
+            if (!Program.SelfTest) macroHost.Save();
+            if (!reRegister) return;
+            var failed = macroHost.Register();
+            if (failed.Count > 0) Toast(Tf("No se pudo registrar el atajo de: {0}. Otra app lo usa o está repetido.", string.Join(", ", failed)), 3);
+        }
+
+        void RebuildMacros()
+        {
+            var list = E<StackPanel>("MacroList");
+            list.Children.Clear();
+            if (macroHost.Data.Items.Count == 0)
+            {
+                list.Children.Add(new Border { Style = St("CardB"), Child = Cap(Tr("Aún no tienes macros. Crea una o añade un ejemplo de arriba.")) });
+                return;
+            }
+            foreach (var m in macroHost.Data.Items) list.Children.Add(MacroCard(m));
+        }
+
+        // Campo que graba una combinación de teclas al pulsarla. Retroceso o Supr lo vacían.
+        TextBox KeyRecorder(string value, bool hotkey, Action<string> set)
+        {
+            var tb = new TextBox { Text = value, IsReadOnly = true, Cursor = Cursors.Hand, Width = 160, FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 12,
+                                   ToolTip = Tr("Haz clic aquí y pulsa la combinación de teclas") };
+            tb.PreviewKeyDown += (s, e) =>
+            {
+                e.Handled = true;
+                Key k = e.Key == Key.System ? e.SystemKey : e.Key;
+                if ((k == Key.Back || k == Key.Delete) && Keyboard.Modifiers == ModifierKeys.None) { tb.Text = ""; set(""); return; }
+                string t = HotkeyText.FromKeys(Keyboard.Modifiers, k);
+                if (t == null) return;
+                if (hotkey && !HotkeyText.IsSafeHotkey(t)) { Toast(Tr("Usa Ctrl, Alt o Win (o una tecla F) para que el atajo no choque con lo que escribes."), 3); return; }
+                tb.Text = t;
+                set(t);
+            };
+            return tb;
+        }
+
+        Button IconBtn(string glyph, string tip, Action click)
+        {
+            var b = new Button { Style = St("Ghost"), Content = Glyph(glyph, 12, Br("Sub")), Padding = new Thickness(8, 6, 8, 6), ToolTip = tip };
+            b.Click += (s, e) => click();
+            return b;
+        }
+
+        FrameworkElement MacroCard(Macro m)
+        {
+            var sp = new StackPanel();
+            var card = new Border { Style = St("CardB"), Margin = new Thickness(0, 0, 0, 14), Child = sp };
+
+            var head = new Grid();
+            head.ColumnDefinitions.Add(new ColumnDefinition());
+            head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var name = new TextBox { Text = m.Name, FontSize = 14, FontWeight = FontWeights.SemiBold, MinWidth = 220, MaxWidth = 340, HorizontalAlignment = HorizontalAlignment.Left };
+            name.LostFocus += (s, e) => { m.Name = name.Text.Trim(); MacroSaved(false); };
+            head.Children.Add(name);
+
+            var hk = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(16, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            hk.Children.Add(new TextBlock { Text = Tr("Atajo"), Foreground = Br("Sub"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
+            hk.Children.Add(KeyRecorder(m.Hotkey, true, v => { m.Hotkey = v; MacroSaved(true); }));
+            Grid.SetColumn(hk, 1); head.Children.Add(hk);
+
+            var sw = new CheckBox { Style = St("Switch"), IsChecked = m.Enabled, Margin = new Thickness(16, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = Tr("Activar o desactivar esta macro") };
+            sw.Click += (s, e) => { m.Enabled = sw.IsChecked == true; MacroSaved(true); };
+            Grid.SetColumn(sw, 2); head.Children.Add(sw);
+
+            bool armed = false;
+            var del = new Button { Style = St("Ghost"), Foreground = Br("Bad"), Padding = new Thickness(10, 6, 10, 6), Margin = new Thickness(10, 0, 0, 0), Content = Tr("Eliminar") };
+            del.Click += (s, e) =>
+            {
+                if (!armed) { armed = true; del.Content = Tr("¿Seguro?"); return; }
+                macroHost.Data.Items.Remove(m);
+                MacroSaved(true);
+                RebuildMacros();
+            };
+            Grid.SetColumn(del, 3); head.Children.Add(del);
+            sp.Children.Add(head);
+
+            sp.Children.Add(new TextBlock { Text = Tr("PASOS"), Style = St("Sec"), Margin = new Thickness(2, 16, 0, 0) });
+            for (int i = 0; i < m.Steps.Count; i++) sp.Children.Add(StepRow(m, i));
+
+            var add = new WrapPanel { Margin = new Thickness(0, 12, 0, 0) };
+            foreach (var kd in MacroKinds())
+            {
+                string kind = kd[0];
+                var b = Btn("+ " + kd[1], "Secondary", () =>
+                {
+                    m.Steps.Add(new MacroStep { Kind = kind, Value = kind == "wait" ? "500" : "" });
+                    MacroSaved(true);
+                    RebuildMacros();
+                });
+                b.Margin = new Thickness(0, 0, 8, 0);
+                add.Children.Add(b);
+            }
+            sp.Children.Add(add);
+            return card;
+        }
+
+        List<string[]> MacroKinds()
+        {
+            return new List<string[]> { new[] { "text", Tr("Texto") }, new[] { "keys", Tr("Teclas") }, new[] { "wait", Tr("Esperar") }, new[] { "open", Tr("Abrir programa") } };
+        }
+
+        FrameworkElement StepRow(Macro m, int i)
+        {
+            var st = m.Steps[i];
+            var g = new Grid { Margin = new Thickness(0, 10, 0, 0) };
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(26) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            g.ColumnDefinitions.Add(new ColumnDefinition());
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            g.Children.Add(new TextBlock { Text = (i + 1) + ".", Foreground = Br("Mute"), VerticalAlignment = VerticalAlignment.Center });
+            var kinds = SegBox("mk" + m.Id + "_" + i, MacroKinds(), st.Kind, c =>
+            {
+                st.Kind = c; st.Value = c == "wait" ? "500" : "";
+                MacroSaved(false);
+                RebuildMacros();
+            });
+            Grid.SetColumn(kinds, 1); g.Children.Add(kinds);
+
+            FrameworkElement editor;
+            if (st.Kind == "keys")
+            {
+                var rec = KeyRecorder(st.Value, false, v => { st.Value = v; MacroSaved(false); });
+                rec.HorizontalAlignment = HorizontalAlignment.Left;
+                editor = rec;
+            }
+            else if (st.Kind == "wait")
+            {
+                var w = new StackPanel { Orientation = Orientation.Horizontal };
+                var tb = new TextBox { Text = st.Value, Width = 90 };
+                tb.LostFocus += (s, e) =>
+                {
+                    int ms;
+                    if (!int.TryParse(tb.Text.Trim(), out ms)) ms = 500;
+                    ms = Math.Max(0, Math.Min(60000, ms));
+                    tb.Text = ms.ToString(); st.Value = tb.Text; MacroSaved(false);
+                };
+                w.Children.Add(tb);
+                w.Children.Add(new TextBlock { Text = Tr("milisegundos"), Foreground = Br("Sub"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) });
+                editor = w;
+            }
+            else if (st.Kind == "open")
+            {
+                var og = new Grid();
+                var tb = new TextBox { Text = st.Value, Margin = new Thickness(0, 0, 52, 0), ToolTip = Tr("Programa, archivo o dirección web") };
+                tb.LostFocus += (s, e) => { st.Value = tb.Text.Trim(); MacroSaved(false); };
+                var browse = new Button { Style = St("Secondary"), Width = 44, HorizontalAlignment = HorizontalAlignment.Right, Padding = new Thickness(0, 8, 0, 8), Content = Glyph("", 13, null) };
+                browse.Click += (s, e) =>
+                {
+                    var dlg = new Microsoft.Win32.OpenFileDialog { Title = Tr("Elige el programa o archivo"), Filter = Tr("Todos los archivos") + "|*.*" };
+                    if (dlg.ShowDialog(win) != true) return;
+                    tb.Text = dlg.FileName; st.Value = dlg.FileName; MacroSaved(false);
+                };
+                og.Children.Add(tb); og.Children.Add(browse);
+                editor = og;
+            }
+            else
+            {
+                var tb = new TextBox { Text = st.Value, AcceptsReturn = true, AcceptsTab = false, TextWrapping = TextWrapping.Wrap, MinHeight = 34, MaxHeight = 140,
+                                       VerticalScrollBarVisibility = ScrollBarVisibility.Auto, ToolTip = Tr("Etiquetas: {fecha}, {hora} y {portapapeles}") };
+                tb.LostFocus += (s, e) => { st.Value = tb.Text; MacroSaved(false); };
+                editor = tb;
+            }
+            editor.Margin = new Thickness(12, 0, 8, 0);
+            editor.VerticalAlignment = VerticalAlignment.Center;
+            Grid.SetColumn(editor, 2); g.Children.Add(editor);
+
+            var btns = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            btns.Children.Add(IconBtn("", Tr("Subir"), () =>
+            {
+                if (i == 0) return;
+                m.Steps.RemoveAt(i); m.Steps.Insert(i - 1, st); MacroSaved(false); RebuildMacros();
+            }));
+            btns.Children.Add(IconBtn("", Tr("Bajar"), () =>
+            {
+                if (i >= m.Steps.Count - 1) return;
+                m.Steps.RemoveAt(i); m.Steps.Insert(i + 1, st); MacroSaved(false); RebuildMacros();
+            }));
+            btns.Children.Add(IconBtn("", Tr("Quitar paso"), () =>
+            {
+                m.Steps.RemoveAt(i); MacroSaved(true); RebuildMacros();
+            }));
+            Grid.SetColumn(btns, 3); g.Children.Add(btns);
+            return g;
+        }
+
         // ============================================================ self test
         public void RunSelfTest()
         {
@@ -2405,6 +2771,9 @@ namespace GameBoost
                 () => Nav("Bench"), () => snap("bench"),
                 () => Nav("Cross"), () => snap("cross"),
                 () => { var sv = E<ScrollViewer>("PageCross"); sv.ScrollToVerticalOffset(520); }, () => snap("cross2"),
+                () => Nav("Aim"), () => snap("aim"),
+                () => Nav("Macros"), () => snap("macros"),
+                () => AddMacroExample(0), () => AddMacroExample(3), () => snap("macros2"),
                 () => Nav("Apps"), () => {}, () => snap("apps"),
                 () => Nav("Tips"), () => snap("tips"),
                 () => Nav("Settings"), () => snap("settings"),

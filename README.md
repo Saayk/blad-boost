@@ -31,6 +31,8 @@ Pensada para quien quiere mejor rendimiento sin pasar horas en foros y guías de
 | 🛠️ | **Optimizar** | Ajustes del sistema según tu hardware (Intel híbrido, Ryzen X3D, portátil, gráficos integrados o dedicados…). |
 | 🧹 | **Limpieza** | Borra temporales y volcados de errores, limpia la caché DNS y revisa el espacio de tu disco. |
 | 🎯 | **Crosshair** | Punto de mira superpuesto sobre tu pantalla y tus juegos (también en pantalla completa): 10 formas (con imagen propia), colores, contorno, brillo, presets, imagen propia, atajo de teclado y códigos para compartir. |
+| 🖱️ | **Puntería** | Entrenador de puntería con Flicks, Gridshot, Tracking y Reacción; usa tu crosshair como cursor y guarda tus marcas. |
+| ⌨️ | **Macros** | Un atajo escribe texto (con fecha, hora o portapapeles), pulsa teclas, espera o abre programas. Para Word, correo y apps; se pausan durante los juegos. |
 | 📊 | **Benchmark** | Mide el rendimiento de tu PC (≈15 s) y guarda un historial para comparar antes y después. |
 | 💡 | **Consejos** | Recomendaciones personalizadas: XMP/EXPO, drivers de GPU, ratón a 1000 Hz+, batería, y más. |
 | 📦 | **Apps recomendadas** | MSI Afterburner, HWiNFO, CPU-Z, CrystalDiskInfo, OBS Studio y otras herramientas útiles, con enlaces oficiales. |
@@ -63,6 +65,8 @@ blad-boost/
 ├── App.cs · MainWindow.xaml     Interfaz principal y lógica de la app
 ├── Core.cs                      Motor de optimización y detección de hardware
 ├── Crosshair.cs                 Punto de mira superpuesto (ventana, dibujo y ajustes)
+├── AimTrainer.cs                Entrenador de puntería
+├── Macros.cs                    Macros de teclado (atajos globales y envío de teclas)
 ├── Services.cs                  Instalador, desinstalación y actualizaciones
 ├── Lang.cs · check-lang.ps1     Traducciones y validador de cadenas
 ├── Setup.cs · Setup.xaml        Instalador gráfico

@@ -375,6 +375,8 @@
             <RadioButton x:Name="NavClean" Style="{StaticResource Nav}" Tag="&#xE74D;" Content="Limpieza" GroupName="nav"/>
             <RadioButton x:Name="NavBench" Style="{StaticResource Nav}" Tag="&#xE9D2;" Content="Benchmark" GroupName="nav"/>
             <RadioButton x:Name="NavCross" Style="{StaticResource Nav}" Tag="&#xE81D;" Content="Crosshair" GroupName="nav"/>
+            <RadioButton x:Name="NavAim" Style="{StaticResource Nav}" Tag="&#xE962;" Content="Puntería" GroupName="nav"/>
+            <RadioButton x:Name="NavMacros" Style="{StaticResource Nav}" Tag="&#xE765;" Content="Macros" GroupName="nav"/>
             <RadioButton x:Name="NavTips" Style="{StaticResource Nav}" Tag="&#xEA80;" Content="Consejos" GroupName="nav"/>
             <RadioButton x:Name="NavApps" Style="{StaticResource Nav}" Tag="&#xE71D;" Content="Apps recomendadas" GroupName="nav"/>
             <TextBlock Text="SISTEMA" FontSize="10.5" Foreground="{StaticResource Mute}" Margin="10,22,0,8" FontWeight="SemiBold"/>
@@ -692,6 +694,42 @@
                 <StackPanel x:Name="CrossBehave" Margin="0,4"/>
               </Border>
               <TextBlock Text="Se ve sobre juegos en ventana sin bordes y en pantalla completa de Windows 10/11. Si un juego usa pantalla completa exclusiva y no aparece, cámbialo a modo sin bordes. GameBoost no toca el juego: solo dibuja una ventana transparente encima. Aun así, comprueba que las normas y el anticheat de tu juego permiten overlays." Style="{StaticResource Cap}" Margin="2,18,0,0"/>
+            </StackPanel>
+          </ScrollViewer>
+
+          <!-- ======== PUNTERÍA ======== -->
+          <ScrollViewer x:Name="PageAim" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="32,0,32,28">
+              <TextBlock Text="Entrenador de puntería" Style="{StaticResource H1}"/>
+              <TextBlock Text="Calienta antes de jugar y mide tu progreso. Tu crosshair hace de cursor." Style="{StaticResource Cap}" Margin="0,4,0,0"/>
+              <Grid Margin="0,18,0,12">
+                <WrapPanel x:Name="AimModes" VerticalAlignment="Center"/>
+                <Button x:Name="BtnAimFull" Style="{StaticResource Secondary}" Content="Pantalla completa" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="14,9"/>
+              </Grid>
+              <Border x:Name="AimHost" Height="460" CornerRadius="12" BorderBrush="{StaticResource Line}" BorderThickness="1" ClipToBounds="True"/>
+              <TextBlock x:Name="AimModeDesc" Style="{StaticResource Cap}" Margin="2,10,0,0"/>
+              <TextBlock Text="TUS MARCAS" Style="{StaticResource Sec}"/>
+              <Border Style="{StaticResource CardB}" Padding="0">
+                <StackPanel x:Name="AimStats" Margin="0,4"/>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+
+          <!-- ======== MACROS ======== -->
+          <ScrollViewer x:Name="PageMacros" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="32,0,32,28">
+              <Grid>
+                <StackPanel Margin="0,0,200,0">
+                  <TextBlock Text="Macros" Style="{StaticResource H1}"/>
+                  <TextBlock Text="Pulsa un atajo y GameBoost escribe texto, pulsa teclas, espera o abre programas por ti. Ideal para Word, el correo o cualquier app." Style="{StaticResource Cap}" Margin="0,4,0,0"/>
+                </StackPanel>
+                <Button x:Name="BtnNewMacro" Style="{StaticResource Primary}" Content="Nueva macro" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="18,9"/>
+              </Grid>
+              <TextBlock Text="EJEMPLOS" Style="{StaticResource Sec}"/>
+              <WrapPanel x:Name="MacroExamples"/>
+              <TextBlock Text="TUS MACROS" Style="{StaticResource Sec}"/>
+              <StackPanel x:Name="MacroList"/>
+              <TextBlock Text="En el texto puedes usar las etiquetas fecha, hora y portapapeles entre llaves: se sustituyen al ejecutar la macro. Las macros se pausan con el Modo Juego activo o con un juego en primer plano, para no enviar teclas a juegos (los anticheats lo castigan)." Style="{StaticResource Cap}" Margin="2,10,0,0"/>
             </StackPanel>
           </ScrollViewer>
 

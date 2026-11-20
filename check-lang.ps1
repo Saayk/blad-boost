@@ -5,7 +5,7 @@ $keys = New-Object 'System.Collections.Generic.HashSet[string]'
 foreach ($m in [regex]::Matches($lang, '\{\s*"((?:[^"\\]|\\.)*)"\s*,\s*"')) { [void]$keys.Add($m.Groups[1].Value) }
 
 $used = New-Object 'System.Collections.Generic.HashSet[string]'
-foreach ($f in 'App.cs', 'Services.cs', 'Setup.cs') {
+foreach ($f in 'App.cs', 'Services.cs', 'Setup.cs', 'AimTrainer.cs', 'Macros.cs') {
   $t = Get-Content "$dir\$f" -Raw -Encoding UTF8
   foreach ($m in [regex]::Matches($t, '(?:\bTr|\bTf|L\.T|L\.F)\(\s*"((?:[^"\\]|\\.)*)"')) { [void]$used.Add($m.Groups[1].Value) }
 }
