@@ -42,7 +42,7 @@ La app lee `version.json` de `main`; si la versión es mayor que la instalada, d
 El tag de la release es `v` + ese número (ej. `v1.0.1`) y el instalador debe llamarse exactamente `GameBoost_Setup.exe`.
 
 ## Estado actual
-- Versión **1.1.0** (añade el Crosshair). La v1.0.0 nunca se publicó y la release v1.1.0 tampoco: Actions está bloqueado por facturación → publicar con `publicar-release.ps1` en Windows o arreglar la facturación. Hasta que exista el instalador en Releases, las apps instaladas verán la actualización pero no podrán descargarla.
+- Versión **1.1.0** (añade el Crosshair), publicada como release `v1.1.0` (la `v1.0.0` también existe). El workflow de Actions sigue fallando (facturación): las releases se publican a mano con `publicar-release.ps1` en Windows, o con `csc.exe` + `gh release create` si no hay PowerShell.
 
 ## Comandos útiles (en `.claude/commands/`)
 - `/sincronizar` — trae y revisa lo último del repo.
