@@ -18,11 +18,11 @@ La app es WPF / .NET Framework 4 y **solo se compila en Windows**. No hace falta
    ```powershell
    powershell -ExecutionPolicy Bypass -File publicar-release.ps1
    ```
-   Solo compilar, sin publicar: `./build.ps1`. Debe terminar con `BUILD OK 1.2.1`.
+   Solo compilar, sin publicar: `./build.ps1`. Debe terminar con `BUILD OK 1.2.2`.
 3. Resultado en la carpeta `dist`: `GameBoost.exe`, `GameBoost_Setup.exe` (el instalador) y `version.json`.
 
 ## Si no tienes `gh`
-Sube `dist\GameBoost_Setup.exe` en https://github.com/Saayk/blad-boost/releases/new con el tag `v1.2.1`.
+Sube `dist\GameBoost_Setup.exe` en https://github.com/Saayk/blad-boost/releases/new con el tag `v1.2.2`.
 El archivo **debe llamarse exactamente `GameBoost_Setup.exe`**, porque la app descarga `releases/latest/download/GameBoost_Setup.exe` para actualizarse.
 
 ## Cómo llegan las actualizaciones a quien ya lo tiene instalado

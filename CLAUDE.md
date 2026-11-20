@@ -44,7 +44,7 @@ La app lee `version.json` de `main`; si la versión es mayor que la instalada, d
 El tag de la release es `v` + ese número (ej. `v1.0.1`) y el instalador debe llamarse exactamente `GameBoost_Setup.exe`.
 
 ## Estado actual
-- Versión **1.2.1** (atajos de macro con cualquier tecla o botón del ratón y tiempos ajustables; la 1.2.0 añadió puntería y macros, la 1.1.0 el Crosshair), publicada como release `v1.2.1`. El instalador no está firmado: Smart App Control puede bloquear la autoactualización. El workflow de Actions sigue fallando (facturación): las releases se publican a mano con `publicar-release.ps1` en Windows, o con `csc.exe` + `gh release create` si no hay PowerShell.
+- Versión **1.2.2** (pasos de ratón en las macros; la 1.2.1 añadió atajos con cualquier tecla o botón del ratón y tiempos, la 1.2.0 puntería y macros, la 1.1.0 el Crosshair), publicada como release `v1.2.2`. El instalador no está firmado: Smart App Control puede bloquear la autoactualización. El workflow de Actions sigue fallando (facturación): las releases se publican a mano con `publicar-release.ps1` en Windows, o con `csc.exe` + `gh release create` si no hay PowerShell.
 
 ## Comandos útiles (en `.claude/commands/`)
 - `/sincronizar` — trae y revisa lo último del repo.

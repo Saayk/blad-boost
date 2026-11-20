@@ -26,9 +26,9 @@ using WF = System.Windows.Forms;
 [assembly: AssemblyProduct("GameBoost")]
 [assembly: AssemblyCopyright("© 2026 BLAD Studios")]
 [assembly: AssemblyTrademark("GameBoost es una marca de BLAD Studios")]
-[assembly: AssemblyVersion("1.2.1.0")]
-[assembly: AssemblyFileVersion("1.2.1.0")]
-[assembly: AssemblyInformationalVersion("1.2.1")]
+[assembly: AssemblyVersion("1.2.2.0")]
+[assembly: AssemblyFileVersion("1.2.2.0")]
+[assembly: AssemblyInformationalVersion("1.2.2")]
 
 namespace GameBoost
 {

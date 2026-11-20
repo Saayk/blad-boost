@@ -1,5 +1,5 @@
 ﻿{
     "url":  "https://github.com/Saayk/blad-boost/releases/latest/download/GameBoost_Setup.exe",
-    "version":  "1.2.1",
-    "notes":  "Macros: el atajo puede ser cualquier tecla o la rueda y los botones laterales del raton, y cada paso tiene tiempos ajustables (pulsacion, pausa entre letras y retardo inicial)."
+    "version":  "1.2.2",
+    "notes":  "Macros: nuevo paso de raton para pulsar el boton izquierdo, derecho, la rueda o los laterales, con pulsacion y pausa ajustables."
 }
