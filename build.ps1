@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 $dir = $PSScriptRoot
 $dist = Join-Path $dir 'dist'
 New-Item -ItemType Directory -Force $dist | Out-Null
-$version = '1.2.2'
+$version = '1.3.0'
 
 # ---------- icono (PNG dentro de ICO, 256 px) ----------
 if (-not (Test-Path "$dir\app.ico")) {
@@ -62,7 +62,7 @@ Build "$dir\Setup_test.exe" $setupRes ($shared + "$dir\Setup.cs")
 Build "$dist\GameBoost_Setup.exe" ($setupRes + "/win32manifest:$dir\app.manifest") ($shared + "$dir\Setup.cs")
 
 # ---------- version.json (subelo junto al instalador para publicar una actualizacion) ----------
-@{ version = $version; url = 'https://github.com/Saayk/blad-boost/releases/latest/download/GameBoost_Setup.exe'; notes = 'Macros: nuevo paso de raton para pulsar el boton izquierdo, derecho, la rueda o los laterales, con pulsacion y pausa ajustables.' } |
+@{ version = $version; url = 'https://github.com/Saayk/blad-boost/releases/latest/download/GameBoost_Setup.exe'; notes = 'Nuevo diseno rojo con animaciones y menu por secciones; modulo Red y ping (ping en vivo, regiones, DNS mas rapido, QoS); entrenador de punteria con arma y macros renovadas.' } |
   ConvertTo-Json | Set-Content "$dist\version.json" -Encoding utf8
 
 if ($Deploy) {
