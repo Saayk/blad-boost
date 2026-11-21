@@ -29,6 +29,7 @@ Pensada para quien quiere mejor rendimiento sin pasar horas en foros y guías de
 | 🕹️ | **Juegos** | Detecta juegos de Steam, Epic y Riot (o los agregas a mano) y los lanza optimizados. |
 | 🚀 | **Modo Juego** | Un clic: pausa servicios de Windows durante la partida, cierra apps en segundo plano y libera RAM en espera. |
 | 🛠️ | **Optimizar** | Ajustes del sistema según tu hardware (Intel híbrido, Ryzen X3D, portátil, gráficos integrados o dedicados…). |
+| 🌐 | **Red y ping** | Ping en vivo con gráfica, jitter y pérdida; latencia a centros de datos por región; comparativa de DNS con cambio en un clic; prioridad QoS para juegos y sin subidas P2P de Windows Update. |
 | 🧹 | **Limpieza** | Borra temporales y volcados de errores, limpia la caché DNS y revisa el espacio de tu disco. |
 | 🎯 | **Crosshair** | Punto de mira superpuesto sobre tu pantalla y tus juegos (también en pantalla completa): 10 formas (con imagen propia), colores, contorno, brillo, presets, imagen propia, atajo de teclado y códigos para compartir. |
 | 🖱️ | **Puntería** | Entrenador de puntería con Flicks, Gridshot, Tracking y Reacción; usa tu crosshair como cursor y guarda tus marcas. |
@@ -67,6 +68,7 @@ blad-boost/
 ├── Crosshair.cs                 Punto de mira superpuesto (ventana, dibujo y ajustes)
 ├── AimTrainer.cs                Entrenador de puntería
 ├── Macros.cs                    Macros de teclado (atajos globales y envío de teclas)
+├── Net.cs                       Medidas de red (ping, regiones, DNS)
 ├── Services.cs                  Instalador, desinstalación y actualizaciones
 ├── Lang.cs · check-lang.ps1     Traducciones y validador de cadenas
 ├── Setup.cs · Setup.xaml        Instalador gráfico

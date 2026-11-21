@@ -53,7 +53,7 @@ function Build($out, $extra, $src) {
 }
 
 $appRes = @("/resource:$dir\MainWindow.xaml,MainWindow.xaml")
-$appSrc = $shared + "$dir\Crosshair.cs" + "$dir\AimTrainer.cs" + "$dir\Macros.cs" + "$dir\App.cs"
+$appSrc = $shared + "$dir\Crosshair.cs" + "$dir\AimTrainer.cs" + "$dir\Macros.cs" + "$dir\Net.cs" + "$dir\App.cs"
 Build "$dir\GameBoost_test.exe" $appRes $appSrc
 Build "$dist\GameBoost.exe" ($appRes + "/win32manifest:$dir\app.manifest") $appSrc
 

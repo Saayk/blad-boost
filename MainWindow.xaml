@@ -2,26 +2,26 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="GameBoost · BLAD Studios" Width="1200" Height="780" WindowStyle="None" AllowsTransparency="True"
         Background="Transparent" ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen"
-        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13" Foreground="#E8EAF0"
+        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13" Foreground="#F5F5F7"
         UseLayoutRounding="True" SnapsToDevicePixels="True" TextOptions.TextFormattingMode="Ideal">
   <Window.Resources>
-    <SolidColorBrush x:Key="Bg" Color="#0B0D12"/>
-    <SolidColorBrush x:Key="Side" Color="#0E1016"/>
-    <SolidColorBrush x:Key="Card" Color="#13161E"/>
-    <SolidColorBrush x:Key="CardHi" Color="#1A1E29"/>
-    <SolidColorBrush x:Key="Line" Color="#1F2430"/>
-    <SolidColorBrush x:Key="Text" Color="#E8EAF0"/>
-    <SolidColorBrush x:Key="Sub" Color="#8A90A2"/>
-    <SolidColorBrush x:Key="Mute" Color="#565C6E"/>
-    <SolidColorBrush x:Key="Accent" Color="#7B61FF"/>
-    <SolidColorBrush x:Key="AccentSoft" Color="#1C1838"/>
+    <SolidColorBrush x:Key="Bg" Color="#0B0B0D"/>
+    <SolidColorBrush x:Key="Side" Color="#0F0F12"/>
+    <SolidColorBrush x:Key="Card" Color="#151518"/>
+    <SolidColorBrush x:Key="CardHi" Color="#1C1C20"/>
+    <SolidColorBrush x:Key="Line" Color="#27272C"/>
+    <SolidColorBrush x:Key="Text" Color="#F5F5F7"/>
+    <SolidColorBrush x:Key="Sub" Color="#A1A1AA"/>
+    <SolidColorBrush x:Key="Mute" Color="#63636C"/>
+    <SolidColorBrush x:Key="Accent" Color="#E5242F"/>
+    <SolidColorBrush x:Key="AccentSoft" Color="#2A0E12"/>
     <SolidColorBrush x:Key="Ok" Color="#22C55E"/>
     <SolidColorBrush x:Key="Warn" Color="#F5A524"/>
     <SolidColorBrush x:Key="Bad" Color="#EF4444"/>
     <FontFamily x:Key="Icons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
     <LinearGradientBrush x:Key="AccentGrad" StartPoint="0,0" EndPoint="1,1">
-      <GradientStop Color="#8A6BFF" Offset="0"/>
-      <GradientStop Color="#5A7BFF" Offset="1"/>
+      <GradientStop Color="#FF3D4A" Offset="0"/>
+      <GradientStop Color="#B5121F" Offset="1"/>
     </LinearGradientBrush>
 
     <Style x:Key="H1" TargetType="TextBlock">
@@ -55,6 +55,9 @@
       <Setter Property="Padding" Value="20"/>
       <Setter Property="BorderBrush" Value="{StaticResource Line}"/>
       <Setter Property="BorderThickness" Value="1"/>
+      <Style.Triggers>
+        <Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="#3A1D22"/></Trigger>
+      </Style.Triggers>
     </Style>
 
     <Style x:Key="Nav" TargetType="RadioButton">
@@ -64,24 +67,65 @@
       <Setter Property="FontSize" Value="13.5"/>
       <Setter Property="Template">
         <Setter.Value>
+          <!-- Capas: "b" = fondo al pasar el ratón, "sel" = fondo de la pestaña activa, "bar" = barra roja animada. -->
           <ControlTemplate TargetType="RadioButton">
-            <Border x:Name="b" Background="Transparent" CornerRadius="8" Height="40">
-              <Grid>
-                <Border x:Name="bar" Width="3" Height="18" CornerRadius="2" Background="{StaticResource Accent}" HorizontalAlignment="Left" Visibility="Collapsed"/>
-                <StackPanel Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
-                  <TextBlock Text="{TemplateBinding Tag}" FontFamily="{StaticResource Icons}" FontSize="16" VerticalAlignment="Center" Width="22"/>
-                  <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center"/>
-                </StackPanel>
-              </Grid>
-            </Border>
+            <Grid Height="35">
+              <Border x:Name="sel" CornerRadius="8" Opacity="0">
+                <Border.Background>
+                  <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#3A1218" Offset="0"/>
+                    <GradientStop Color="#1A1214" Offset="1"/>
+                  </LinearGradientBrush>
+                </Border.Background>
+              </Border>
+              <Border x:Name="b" CornerRadius="8">
+                <Border.Background><SolidColorBrush Color="#0018181C"/></Border.Background>
+              </Border>
+              <Border x:Name="bar" Width="3" Height="18" CornerRadius="2" Background="{StaticResource Accent}" HorizontalAlignment="Left" RenderTransformOrigin="0.5,0.5">
+                <Border.RenderTransform><ScaleTransform ScaleY="0"/></Border.RenderTransform>
+              </Border>
+              <StackPanel x:Name="row" Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
+                <StackPanel.RenderTransform><TranslateTransform X="0"/></StackPanel.RenderTransform>
+                <TextBlock x:Name="ico" Text="{TemplateBinding Tag}" FontFamily="{StaticResource Icons}" FontSize="15" VerticalAlignment="Center" Width="22"/>
+                <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Grid>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="b" Property="Background" Value="#131722"/>
+                <Trigger.EnterActions>
+                  <BeginStoryboard><Storyboard>
+                    <ColorAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#FF18181C" Duration="0:0:0.15"/>
+                    <DoubleAnimation Storyboard.TargetName="row" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" To="4" Duration="0:0:0.18">
+                      <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                  </Storyboard></BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                  <BeginStoryboard><Storyboard>
+                    <ColorAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#0018181C" Duration="0:0:0.25"/>
+                    <DoubleAnimation Storyboard.TargetName="row" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" To="0" Duration="0:0:0.22">
+                      <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                  </Storyboard></BeginStoryboard>
+                </Trigger.ExitActions>
                 <Setter Property="Foreground" Value="{StaticResource Text}"/>
               </Trigger>
               <Trigger Property="IsChecked" Value="True">
-                <Setter TargetName="b" Property="Background" Value="#191D2A"/>
-                <Setter TargetName="bar" Property="Visibility" Value="Visible"/>
+                <Trigger.EnterActions>
+                  <BeginStoryboard><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="sel" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.25"/>
+                    <DoubleAnimation Storyboard.TargetName="bar" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.35">
+                      <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.5"/></DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                  </Storyboard></BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                  <BeginStoryboard><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="sel" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
+                    <DoubleAnimation Storyboard.TargetName="bar" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0" Duration="0:0:0.18"/>
+                  </Storyboard></BeginStoryboard>
+                </Trigger.ExitActions>
+                <Setter TargetName="ico" Property="Foreground" Value="{StaticResource Accent}"/>
                 <Setter Property="Foreground" Value="{StaticResource Text}"/>
               </Trigger>
             </ControlTemplate.Triggers>
@@ -98,13 +142,44 @@
       <Setter Property="Background" Value="{StaticResource AccentGrad}"/>
       <Setter Property="Template">
         <Setter.Value>
+          <!-- Botón con micro-animaciones: crece al pasar el ratón (con halo rojo) y se hunde al pulsar. -->
           <ControlTemplate TargetType="Button">
-            <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}">
+            <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}" RenderTransformOrigin="0.5,0.5">
+              <Border.RenderTransform><ScaleTransform ScaleX="1" ScaleY="1"/></Border.RenderTransform>
+              <Border.Effect><DropShadowEffect Color="#E5242F" BlurRadius="16" ShadowDepth="0" Opacity="0"/></Border.Effect>
               <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Opacity" Value="0.86"/></Trigger>
-              <Trigger Property="IsPressed" Value="True"><Setter TargetName="b" Property="Opacity" Value="0.72"/></Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Trigger.EnterActions>
+                  <BeginStoryboard><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.03" Duration="0:0:0.15"/>
+                    <DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.03" Duration="0:0:0.15"/>
+                    <DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0.45" Duration="0:0:0.2"/>
+                  </Storyboard></BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                  <BeginStoryboard><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.2"/>
+                    <DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.2"/>
+                    <DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)" To="0" Duration="0:0:0.25"/>
+                  </Storyboard></BeginStoryboard>
+                </Trigger.ExitActions>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Trigger.EnterActions>
+                  <BeginStoryboard><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="0.96" Duration="0:0:0.07"/>
+                    <DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0.96" Duration="0:0:0.07"/>
+                  </Storyboard></BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                  <BeginStoryboard><Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.03" Duration="0:0:0.12"/>
+                    <DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.03" Duration="0:0:0.12"/>
+                  </Storyboard></BeginStoryboard>
+                </Trigger.ExitActions>
+              </Trigger>
               <Trigger Property="IsEnabled" Value="False"><Setter TargetName="b" Property="Opacity" Value="0.4"/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -112,8 +187,8 @@
       </Setter>
     </Style>
     <Style x:Key="Secondary" TargetType="Button" BasedOn="{StaticResource Primary}">
-      <Setter Property="Background" Value="#191D28"/>
-      <Setter Property="BorderBrush" Value="#262B39"/>
+      <Setter Property="Background" Value="#1B1B1F"/>
+      <Setter Property="BorderBrush" Value="#2E2E34"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="Foreground" Value="{StaticResource Text}"/>
       <Setter Property="FontWeight" Value="Normal"/>
@@ -154,7 +229,7 @@
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="b" Property="Background" Value="#1D2230"/>
+                <Setter TargetName="b" Property="Background" Value="#232328"/>
                 <Setter Property="Foreground" Value="{StaticResource Text}"/>
               </Trigger>
             </ControlTemplate.Triggers>
@@ -174,7 +249,7 @@
             <Border x:Name="b" Background="Transparent"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="b" Property="Background" Value="#1A1E29"/>
+                <Setter TargetName="b" Property="Background" Value="#1C1C20"/>
                 <Setter Property="Foreground" Value="{StaticResource Text}"/>
               </Trigger>
             </ControlTemplate.Triggers>
@@ -203,8 +278,8 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="CheckBox">
-            <Border x:Name="track" Width="40" Height="22" CornerRadius="11" Background="#262B39">
-              <Ellipse x:Name="thumb" Width="16" Height="16" Fill="#9AA0B2" HorizontalAlignment="Left" Margin="3,0,0,0">
+            <Border x:Name="track" Width="40" Height="22" CornerRadius="11" Background="#2E2E34">
+              <Ellipse x:Name="thumb" Width="16" Height="16" Fill="#A8A8B0" HorizontalAlignment="Left" Margin="3,0,0,0">
                 <Ellipse.RenderTransform><TranslateTransform X="0"/></Ellipse.RenderTransform>
               </Ellipse>
             </Border>
@@ -237,7 +312,7 @@
         <Setter.Value>
           <ControlTemplate TargetType="Slider">
             <Grid Background="Transparent">
-              <Border Height="4" CornerRadius="2" Background="#262B39" VerticalAlignment="Center"/>
+              <Border Height="4" CornerRadius="2" Background="#2E2E34" VerticalAlignment="Center"/>
               <Track x:Name="PART_Track">
                 <Track.DecreaseRepeatButton>
                   <RepeatButton Command="Slider.DecreaseLarge" Focusable="False">
@@ -293,7 +368,7 @@
     </Style>
 
     <Style TargetType="TextBox">
-      <Setter Property="Background" Value="#0E1117"/>
+      <Setter Property="Background" Value="#0F0F12"/>
       <Setter Property="Foreground" Value="{StaticResource Text}"/>
       <Setter Property="BorderBrush" Value="{StaticResource Line}"/>
       <Setter Property="CaretBrush" Value="White"/>
@@ -325,7 +400,7 @@
               <Track.Thumb>
                 <Thumb>
                   <Thumb.Template>
-                    <ControlTemplate TargetType="Thumb"><Border CornerRadius="3" Background="#2A3040"/></ControlTemplate>
+                    <ControlTemplate TargetType="Thumb"><Border CornerRadius="3" Background="#313137"/></ControlTemplate>
                   </Thumb.Template>
                 </Thumb>
               </Track.Thumb>
@@ -336,7 +411,7 @@
     </Style>
   </Window.Resources>
 
-  <Border Margin="14" CornerRadius="14" Background="{StaticResource Bg}" BorderBrush="#1C2130" BorderThickness="1">
+  <Border Margin="14" CornerRadius="14" Background="{StaticResource Bg}" BorderBrush="#232328" BorderThickness="1">
     <Border.Effect><DropShadowEffect BlurRadius="26" ShadowDepth="0" Opacity="0.55" Color="Black"/></Border.Effect>
     <Grid>
       <Grid.ColumnDefinitions>
@@ -347,8 +422,9 @@
       <!-- ================= SIDEBAR ================= -->
       <Border x:Name="SideBar" Background="{StaticResource Side}" CornerRadius="13,0,0,13" BorderBrush="{StaticResource Line}" BorderThickness="0,0,1,0">
         <DockPanel Margin="14,20,14,16">
-          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,0,0,26">
-            <Border Width="36" Height="36" CornerRadius="10" Background="{StaticResource AccentGrad}">
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,0,0,18">
+            <Border x:Name="Logo" Width="36" Height="36" CornerRadius="10" Background="{StaticResource AccentGrad}">
+              <Border.Effect><DropShadowEffect Color="#E5242F" BlurRadius="18" ShadowDepth="0" Opacity="0.5"/></Border.Effect>
               <TextBlock Text="&#xE945;" FontFamily="{StaticResource Icons}" FontSize="17" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Border>
             <StackPanel Margin="11,0,0,0" VerticalAlignment="Center">
@@ -357,7 +433,7 @@
             </StackPanel>
           </StackPanel>
 
-          <Border DockPanel.Dock="Bottom" Background="#12151D" CornerRadius="10" Padding="14,12" BorderBrush="{StaticResource Line}" BorderThickness="1">
+          <Border DockPanel.Dock="Bottom" Background="#141417" CornerRadius="10" Padding="14,12" BorderBrush="{StaticResource Line}" BorderThickness="1">
             <StackPanel>
               <StackPanel Orientation="Horizontal">
                 <Ellipse x:Name="SessDot" Width="8" Height="8" Fill="{StaticResource Mute}" VerticalAlignment="Center"/>
@@ -367,19 +443,22 @@
             </StackPanel>
           </Border>
 
-          <StackPanel>
-            <TextBlock Text="GENERAL" FontSize="10.5" Foreground="{StaticResource Mute}" Margin="10,0,0,8" FontWeight="SemiBold"/>
+          <StackPanel x:Name="NavList">
+            <TextBlock Text="RENDIMIENTO" FontSize="10.5" Foreground="{StaticResource Mute}" Margin="10,0,0,6" FontWeight="SemiBold"/>
             <RadioButton x:Name="NavDash" Style="{StaticResource Nav}" Tag="&#xE80F;" Content="Panel" GroupName="nav" IsChecked="True"/>
-            <RadioButton x:Name="NavGames" Style="{StaticResource Nav}" Tag="&#xE7FC;" Content="Juegos" GroupName="nav"/>
             <RadioButton x:Name="NavTweaks" Style="{StaticResource Nav}" Tag="&#xE9D9;" Content="Optimizar" GroupName="nav"/>
+            <RadioButton x:Name="NavNet" Style="{StaticResource Nav}" Tag="&#xE701;" Content="Red y ping" GroupName="nav"/>
             <RadioButton x:Name="NavClean" Style="{StaticResource Nav}" Tag="&#xE74D;" Content="Limpieza" GroupName="nav"/>
             <RadioButton x:Name="NavBench" Style="{StaticResource Nav}" Tag="&#xE9D2;" Content="Benchmark" GroupName="nav"/>
+            <TextBlock Text="JUEGOS" FontSize="10.5" Foreground="{StaticResource Mute}" Margin="10,14,0,6" FontWeight="SemiBold"/>
+            <RadioButton x:Name="NavGames" Style="{StaticResource Nav}" Tag="&#xE7FC;" Content="Juegos" GroupName="nav"/>
             <RadioButton x:Name="NavCross" Style="{StaticResource Nav}" Tag="&#xE81D;" Content="Crosshair" GroupName="nav"/>
             <RadioButton x:Name="NavAim" Style="{StaticResource Nav}" Tag="&#xE962;" Content="Puntería" GroupName="nav"/>
+            <TextBlock Text="UTILIDADES" FontSize="10.5" Foreground="{StaticResource Mute}" Margin="10,14,0,6" FontWeight="SemiBold"/>
             <RadioButton x:Name="NavMacros" Style="{StaticResource Nav}" Tag="&#xE765;" Content="Macros" GroupName="nav"/>
             <RadioButton x:Name="NavTips" Style="{StaticResource Nav}" Tag="&#xEA80;" Content="Consejos" GroupName="nav"/>
             <RadioButton x:Name="NavApps" Style="{StaticResource Nav}" Tag="&#xE71D;" Content="Apps recomendadas" GroupName="nav"/>
-            <TextBlock Text="SISTEMA" FontSize="10.5" Foreground="{StaticResource Mute}" Margin="10,22,0,8" FontWeight="SemiBold"/>
+            <TextBlock Text="SISTEMA" FontSize="10.5" Foreground="{StaticResource Mute}" Margin="10,14,0,6" FontWeight="SemiBold"/>
             <RadioButton x:Name="NavSettings" Style="{StaticResource Nav}" Tag="&#xE713;" Content="Ajustes" GroupName="nav"/>
           </StackPanel>
         </DockPanel>
@@ -403,7 +482,7 @@
           <!-- ======== DASHBOARD ======== -->
           <ScrollViewer x:Name="PageDash" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="32,0,32,28">
-              <Border x:Name="UpdateBanner" Visibility="Collapsed" Background="#15122B" BorderBrush="#3A2F7A" BorderThickness="1" CornerRadius="12" Padding="18,14" Margin="0,0,0,18">
+              <Border x:Name="UpdateBanner" Visibility="Collapsed" Background="#1F0D10" BorderBrush="#5A1A22" BorderThickness="1" CornerRadius="12" Padding="18,14" Margin="0,0,0,18">
                 <Grid>
                   <StackPanel Orientation="Horizontal">
                     <Border Width="34" Height="34" CornerRadius="9" Background="{StaticResource AccentGrad}">
@@ -442,7 +521,7 @@
                 <Border Style="{StaticResource CardB}" Margin="0,6,0,6">
                   <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Grid Width="132" Height="132" Margin="0,2,0,14">
-                      <Ellipse Stroke="#1F2430" StrokeThickness="10"/>
+                      <Ellipse Stroke="#27272C" StrokeThickness="10"/>
                       <Path x:Name="RingArc" Stroke="{StaticResource AccentGrad}" StrokeThickness="10" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                       <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <TextBlock x:Name="ScoreText" Text="--" FontSize="34" FontWeight="SemiBold" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Display, Segoe UI"/>
@@ -533,7 +612,7 @@
                   <Button x:Name="BtnApplyRec2" Style="{StaticResource Primary}" Content="Aplicar recomendados" Padding="14,9" Margin="10,0,0,0"/>
                 </StackPanel>
               </Grid>
-              <Border x:Name="ProfileBanner" Style="{StaticResource CardB}" Margin="0,18,0,0" Visibility="Collapsed" Background="#15122B" BorderBrush="#2B2455">
+              <Border x:Name="ProfileBanner" Style="{StaticResource CardB}" Margin="0,18,0,0" Visibility="Collapsed" Background="#1F0D10" BorderBrush="#45141A">
                 <StackPanel>
                   <StackPanel Orientation="Horizontal">
                     <Border Width="32" Height="32" CornerRadius="9" Background="{StaticResource AccentGrad}">
@@ -623,7 +702,7 @@
                   <StackPanel x:Name="BenchProgress" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Center" Width="260">
                     <TextBlock x:Name="BenchStep" Style="{StaticResource Cap}" Margin="0,0,0,8"/>
                     <Grid Height="6">
-                      <Border Background="#1F2430" CornerRadius="3"/>
+                      <Border Background="#27272C" CornerRadius="3"/>
                       <Border x:Name="BenchBar" Background="{StaticResource AccentGrad}" CornerRadius="3" HorizontalAlignment="Left" Width="0"/>
                     </Grid>
                   </StackPanel>
@@ -653,8 +732,8 @@
                   <Border x:Name="CrossPreviewBox" Width="240" Height="240" CornerRadius="12" BorderBrush="{StaticResource Line}" BorderThickness="1" ClipToBounds="True">
                     <Border.Background>
                       <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#222B3C" Offset="0"/>
-                        <GradientStop Color="#0B0E14" Offset="1"/>
+                        <GradientStop Color="#26262C" Offset="0"/>
+                        <GradientStop Color="#0B0B0D" Offset="1"/>
                       </LinearGradientBrush>
                     </Border.Background>
                   </Border>
@@ -697,14 +776,61 @@
             </StackPanel>
           </ScrollViewer>
 
+          <!-- ======== RED Y PING ======== -->
+          <ScrollViewer x:Name="PageNet" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="32,0,32,28">
+              <TextBlock Text="Red y ping" Style="{StaticResource H1}"/>
+              <TextBlock Text="Mide tu conexión en vivo, encuentra la región y el DNS más rápidos para ti y quita los frenos de red de Windows." Style="{StaticResource Cap}" Margin="0,4,0,0"/>
+              <Border Style="{StaticResource CardB}" Margin="0,18,0,0">
+                <StackPanel>
+                  <Grid>
+                    <StackPanel>
+                      <TextBlock Text="Ping en vivo" Style="{StaticResource H2}"/>
+                      <TextBlock x:Name="NetTargetText" Style="{StaticResource Cap}" Margin="0,3,0,0"/>
+                    </StackPanel>
+                    <WrapPanel x:Name="NetTargets" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                  </Grid>
+                  <UniformGrid x:Name="NetStats" Columns="4" Margin="0,16,0,0"/>
+                  <Border x:Name="NetChartBox" Height="170" Margin="0,16,0,0" CornerRadius="10" Background="#0F0F12" BorderBrush="{StaticResource Line}" BorderThickness="1" ClipToBounds="True"/>
+                </StackPanel>
+              </Border>
+              <Grid Margin="0,26,0,10">
+                <TextBlock Text="REGIONES DE SERVIDORES" Style="{StaticResource Sec}" Margin="2,0,0,0" VerticalAlignment="Center"/>
+                <Button x:Name="BtnNetRegions" Style="{StaticResource Secondary}" Content="Medir regiones" HorizontalAlignment="Right" Padding="14,7"/>
+              </Grid>
+              <Border Style="{StaticResource CardB}" Padding="0">
+                <StackPanel x:Name="NetRegions" Margin="0,4"/>
+              </Border>
+              <Grid Margin="0,26,0,10">
+                <TextBlock Text="DNS MÁS RÁPIDO" Style="{StaticResource Sec}" Margin="2,0,0,0" VerticalAlignment="Center"/>
+                <Button x:Name="BtnNetDns" Style="{StaticResource Secondary}" Content="Comparar DNS" HorizontalAlignment="Right" Padding="14,7"/>
+              </Grid>
+              <Border Style="{StaticResource CardB}" Padding="0">
+                <StackPanel x:Name="NetDnsList" Margin="0,4"/>
+              </Border>
+              <Grid Margin="0,26,0,10">
+                <TextBlock Text="OPTIMIZACIÓN DE RED" Style="{StaticResource Sec}" Margin="2,0,0,0" VerticalAlignment="Center"/>
+                <Button x:Name="BtnNetOptimize" Style="{StaticResource Primary}" Content="Optimizar mi red" HorizontalAlignment="Right" Padding="16,8"/>
+              </Grid>
+              <Border Style="{StaticResource CardB}" Padding="0">
+                <StackPanel x:Name="NetTweaks" Margin="0,4"/>
+              </Border>
+              <TextBlock Text="Cómo funciona: programas como ExitLag usan servidores propios repartidos por el mundo para cambiar la ruta de tu conexión. GameBoost no tiene esa red, así que no puede acortar la ruta; lo que sí hace es medir dónde estás mejor conectado, elegir el DNS más rápido, priorizar el tráfico de tus juegos y quitar los límites de red de Windows. Todo se puede deshacer." Style="{StaticResource Cap}" Margin="2,18,0,0"/>
+            </StackPanel>
+          </ScrollViewer>
+
           <!-- ======== PUNTERÍA ======== -->
           <ScrollViewer x:Name="PageAim" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="32,0,32,28">
               <TextBlock Text="Entrenador de puntería" Style="{StaticResource H1}"/>
               <TextBlock Text="Calienta antes de jugar y mide tu progreso. Tu crosshair hace de cursor." Style="{StaticResource Cap}" Margin="0,4,0,0"/>
               <Grid Margin="0,18,0,12">
-                <WrapPanel x:Name="AimModes" VerticalAlignment="Center"/>
-                <Button x:Name="BtnAimFull" Style="{StaticResource Secondary}" Content="Pantalla completa" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="14,9"/>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition/>
+                  <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <WrapPanel x:Name="AimModes" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <Button x:Name="BtnAimFull" Grid.Column="1" Style="{StaticResource Secondary}" Content="Pantalla completa" VerticalAlignment="Center" Padding="14,9"/>
               </Grid>
               <Border x:Name="AimHost" Height="460" CornerRadius="12" BorderBrush="{StaticResource Line}" BorderThickness="1" ClipToBounds="True"/>
               <TextBlock x:Name="AimModeDesc" Style="{StaticResource Cap}" Margin="2,10,0,0"/>
@@ -818,13 +944,13 @@
                 </Grid>
               </Border>
               <TextBlock Text="ACTIVIDAD" Style="{StaticResource Sec}"/>
-              <TextBox x:Name="LogBox" IsReadOnly="True" Height="220" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Cascadia Mono, Consolas" FontSize="11.5" Foreground="#9AA3B5"/>
+              <TextBox x:Name="LogBox" IsReadOnly="True" Height="220" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Cascadia Mono, Consolas" FontSize="11.5" Foreground="#A8A8B0"/>
             </StackPanel>
           </ScrollViewer>
 
           <!-- ======== EDITOR OVERLAY ======== -->
           <Grid x:Name="Overlay" Visibility="Collapsed" Background="#CC07090D">
-            <Border Width="540" Background="#141822" CornerRadius="14" BorderBrush="#262B39" BorderThickness="1" Padding="26,24" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <Border Width="540" Background="#161619" CornerRadius="14" BorderBrush="#2E2E34" BorderThickness="1" Padding="26,24" VerticalAlignment="Center" HorizontalAlignment="Center">
               <StackPanel>
                 <TextBlock x:Name="EdTitle" Text="Editar juego" FontSize="19" FontWeight="SemiBold"/>
                 <TextBlock Text="Nombre" Style="{StaticResource Lbl}"/>
@@ -852,7 +978,7 @@
                   </StackPanel>
                 </Grid>
                 <TextBlock Text="Prioridad de CPU" Style="{StaticResource Lbl}"/>
-                <Border Background="#0E1117" CornerRadius="9" Padding="3" HorizontalAlignment="Left" BorderBrush="{StaticResource Line}" BorderThickness="1">
+                <Border Background="#0F0F12" CornerRadius="9" Padding="3" HorizontalAlignment="Left" BorderBrush="{StaticResource Line}" BorderThickness="1">
                   <StackPanel Orientation="Horizontal">
                     <RadioButton x:Name="EdPrioN" Style="{StaticResource Seg}" Content="Normal" GroupName="prio"/>
                     <RadioButton x:Name="EdPrioA" Style="{StaticResource Seg}" Content="Superior" GroupName="prio"/>
@@ -873,7 +999,7 @@
           </Grid>
 
           <!-- ======== TOAST ======== -->
-          <Border x:Name="Toast" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,26,22" Background="#1A1E2A" CornerRadius="10" Padding="16,12" BorderBrush="#2A3040" BorderThickness="1" Opacity="0" IsHitTestVisible="False" MaxWidth="440">
+          <Border x:Name="Toast" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,26,22" Background="#1C1C20" CornerRadius="10" Padding="16,12" BorderBrush="#313137" BorderThickness="1" Opacity="0" IsHitTestVisible="False" MaxWidth="440">
             <Border.Effect><DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.5" Color="Black"/></Border.Effect>
             <StackPanel Orientation="Horizontal">
               <TextBlock x:Name="ToastIcon" FontFamily="{StaticResource Icons}" Text="&#xE73E;" Foreground="{StaticResource Ok}" VerticalAlignment="Top" Margin="0,2,12,0" FontSize="14"/>
