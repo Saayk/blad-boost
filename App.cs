@@ -199,6 +199,7 @@ namespace GameBoost
             BuildCrosshair();
             BuildAim();
             BuildMacros();
+            BuildNet();
             WireGames();
             WireDashboard();
             WireBench();
@@ -230,6 +231,7 @@ namespace GameBoost
             }
             win.Dispatcher.BeginInvoke(new Action(StartupScan), DispatcherPriority.Background);
             win.Closing += OnWindowClosing;
+            AnimateStartup();
             Log("GameBoost " + Installer.Version + " " + Tr("iniciado"));
         }
 
@@ -326,6 +328,9 @@ namespace GameBoost
             ic.Text = kind == 0 ? "" : kind == 1 ? "" : kind == 2 ? "" : "";
             ic.Foreground = kind == 0 ? Br("Ok") : kind == 3 ? Br("Warn") : Br("Accent");
             t.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(160)));
+            var slide = t.RenderTransform as TranslateTransform;
+            if (slide == null) { slide = new TranslateTransform(); t.RenderTransform = slide; }
+            slide.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(16, 0, TimeSpan.FromMilliseconds(280)) { EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.4 } });
             if (toastTimer != null) toastTimer.Stop();
             if (sticky) return;
             toastTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(Math.Max(3.2, msg.Length / 18.0)) };
@@ -409,7 +414,7 @@ namespace GameBoost
             E<Button>("BtnClose").Click += (s, e) => win.Close();
         }
 
-        readonly string[] pageNames = { "Dash", "Games", "Tweaks", "Clean", "Bench", "Cross", "Aim", "Macros", "Tips", "Apps", "Settings" };
+        readonly string[] pageNames = { "Dash", "Games", "Tweaks", "Net", "Clean", "Bench", "Cross", "Aim", "Macros", "Tips", "Apps", "Settings" };
         void WireNav()
         {
             foreach (var n in pageNames)
@@ -419,6 +424,7 @@ namespace GameBoost
             }
         }
         void Nav(string name) { E<RadioButton>("Nav" + name).IsChecked = true; }
+        // Transición al cambiar de pestaña: la página entra deslizándose y sus bloques aparecen uno tras otro.
         void ShowPage(string name)
         {
             foreach (var n in pageNames)
@@ -427,12 +433,20 @@ namespace GameBoost
                 if (n != name) { p.Visibility = Visibility.Collapsed; continue; }
                 p.Visibility = Visibility.Visible;
                 p.ScrollToTop();
-                var tt = new TranslateTransform(0, 10);
+                var tt = new TranslateTransform(22, 0);
                 p.RenderTransform = tt;
-                p.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)));
-                tt.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(220)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+                p.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)));
+                tt.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(22, 0, TimeSpan.FromMilliseconds(320)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+                var panel = p.Content as Panel;
+                if (panel != null)
+                {
+                    int i = 0;
+                    foreach (UIElement c in panel.Children) { if (i >= 14) break; AnimateIn(c, 40 + i * 35, 14, false); i++; }
+                }
             }
             if (aimTrainer != null) { if (name == "Aim") aimTrainer.SetLook(CL); else aimTrainer.Stop(); }
+            if (name == "Net") { StartNetLive(); if (!netAutoMeasured) { netAutoMeasured = true; MeasureRegions(); MeasureDns(); } }
+            else StopNetLive();
             if (name == "Clean" && Cleaner.Items.All(i => i.Size < 0)) Analyze();
             if (name == "Apps") Bg(() => { var inst = Sys.InstalledApps(); Ui(() => { installedApps = inst; BuildApps(); }); });
         }
@@ -540,7 +554,7 @@ namespace GameBoost
             w.Children.Clear();
             foreach (var c in Chips())
             {
-                var b = Badge(c, "#C9C2FF", "#221C45");
+                var b = Badge(c, "#FFC2C6", "#33111A");
                 b.Margin = new Thickness(0, 0, 6, 6);
                 b.Padding = new Thickness(9, 3, 9, 4);
                 w.Children.Add(b);
@@ -560,9 +574,9 @@ namespace GameBoost
                 var g = new Grid { Margin = new Thickness(0, 5, 0, 0) };
                 g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 g.ColumnDefinitions.Add(new ColumnDefinition());
-                var ic = Glyph("", 11, Hex("#A996FF")); ic.Margin = new Thickness(0, 3, 10, 0); ic.VerticalAlignment = VerticalAlignment.Top;
+                var ic = Glyph("", 11, Hex("#FF6B75")); ic.Margin = new Thickness(0, 3, 10, 0); ic.VerticalAlignment = VerticalAlignment.Top;
                 g.Children.Add(ic);
-                var t = Cap(a); t.Foreground = Hex("#B9BED0");
+                var t = Cap(a); t.Foreground = Hex("#CFCFD6");
                 Grid.SetColumn(t, 1); g.Children.Add(t);
                 l.Children.Add(g);
             }
@@ -598,7 +612,7 @@ namespace GameBoost
             var sp = new StackPanel();
             var head = new Grid();
             var hs = new StackPanel { Orientation = Orientation.Horizontal };
-            hs.Children.Add(IconBox(glyph, color, "#1A1E29", 28));
+            hs.Children.Add(IconBox(glyph, color, "#1C1C20", 28));
             var tt = Txt(title, 12.5, Br("Sub")); tt.Margin = new Thickness(10, 0, 0, 0); tt.VerticalAlignment = VerticalAlignment.Center;
             hs.Children.Add(tt);
             head.Children.Add(hs);
@@ -609,7 +623,7 @@ namespace GameBoost
             sub = Cap(" "); sub.TextTrimming = TextTrimming.CharacterEllipsis; sub.TextWrapping = TextWrapping.NoWrap;
             sp.Children.Add(sub);
             var track = new Grid { Height = 4, Margin = new Thickness(0, 12, 0, 0) };
-            track.Children.Add(new Border { Background = Hex("#1F2430"), CornerRadius = new CornerRadius(2) });
+            track.Children.Add(new Border { Background = Hex("#27272C"), CornerRadius = new CornerRadius(2) });
             bar = new ScaleTransform(0, 1);
             track.Children.Add(new Border { Background = Hex(color), CornerRadius = new CornerRadius(2), RenderTransform = bar });
             sp.Children.Add(track);
@@ -622,8 +636,8 @@ namespace GameBoost
             var g = E<UniformGrid>("StatsGrid");
             var free = new Button { Style = St("Ghost"), Padding = new Thickness(8, 3, 8, 3), Content = new TextBlock { Text = Tr("Liberar"), FontSize = 12 } };
             free.Click += (s, e) => Bg(() => { Sys.PurgeStandby(); Toast(Tr("Memoria en espera (standby) liberada"), 0); Log(Tr("Memoria en espera (standby) liberada")); });
-            g.Children.Add(StatCard("", Tr("Procesador"), "#7B61FF", out cpuVal, out cpuSub, out cpuBar));
-            g.Children.Add(StatCard("", Tr("Memoria RAM"), "#5A7BFF", out ramVal, out ramSub, out ramBar, free));
+            g.Children.Add(StatCard("", Tr("Procesador"), "#E5242F", out cpuVal, out cpuSub, out cpuBar));
+            g.Children.Add(StatCard("", Tr("Memoria RAM"), "#B5121F", out ramVal, out ramSub, out ramBar, free));
             g.Children.Add(StatCard("", Tr("Latencia de red"), "#22C55E", out pingVal, out pingSub, out pingBar));
             g.Children.Add(StatCard("", Tr("Disco del sistema"), "#F5A524", out diskVal, out diskSub, out diskBar));
             cpuSub.Text = Tf("{0} hilos", Environment.ProcessorCount);
@@ -860,8 +874,8 @@ namespace GameBoost
             bool first = true;
             foreach (var r in recs)
             {
-                string fg = r.Sev == 3 ? "#F5A524" : r.Sev == 2 ? "#9D8CFF" : r.Sev == 1 ? "#7FA2FF" : "#22C55E";
-                string bg = r.Sev == 3 ? "#2A2113" : r.Sev == 2 ? "#1E1A38" : r.Sev == 1 ? "#161E33" : "#11261A";
+                string fg = r.Sev == 3 ? "#F5A524" : r.Sev == 2 ? "#FF7A83" : r.Sev == 1 ? "#D4D4D8" : "#22C55E";
+                string bg = r.Sev == 3 ? "#2A2113" : r.Sev == 2 ? "#2A1014" : r.Sev == 1 ? "#1C1C20" : "#11261A";
                 string gl = r.Sev == 3 ? "" : r.Sev == 2 ? "" : r.Sev == 1 ? "" : "";
                 FrameworkElement btn = null;
                 if (r.Do != null) { var a = r.Do; btn = Btn(r.Btn, "Secondary", () => a()); }
@@ -951,7 +965,7 @@ namespace GameBoost
                 play.Click += (s, e) => Play(gm);
                 grid.Children.Add(play);
                 tile.Child = grid;
-                tile.MouseEnter += (s, e) => tile.BorderBrush = Hex("#4A3D99");
+                tile.MouseEnter += (s, e) => tile.BorderBrush = Hex("#8A1A22");
                 tile.MouseLeave += (s, e) => tile.BorderBrush = Br("Line");
                 g.Children.Add(tile);
             }
@@ -960,8 +974,8 @@ namespace GameBoost
         // ============================================================ games
         static readonly string[][] Palettes =
         {
-            new[] { "#3B2A7A", "#1B2B5E" }, new[] { "#5A1E3A", "#2A1B4E" }, new[] { "#0F4C45", "#15304F" },
-            new[] { "#4A2A0F", "#3A1640" }, new[] { "#1E3A5F", "#2B1B55" }, new[] { "#2D3748", "#1A202C" }
+            new[] { "#6A1820", "#26262C" }, new[] { "#5A1E25", "#3E1218" }, new[] { "#0F4C45", "#15304F" },
+            new[] { "#4A2A0F", "#3A1418" }, new[] { "#1E3A5F", "#42131A" }, new[] { "#34343A", "#1C1C20" }
         };
         Brush HeaderBrush(Game g)
         {
@@ -1075,7 +1089,7 @@ namespace GameBoost
             foreach (var g in list) w.Children.Add(GameCard(g));
 
             var add = new Grid { Width = 270, Height = 222, Margin = new Thickness(0, 0, 12, 12), Cursor = Cursors.Hand, Background = Brushes.Transparent };
-            var rect = new Shapes.Rectangle { RadiusX = 12, RadiusY = 12, Stroke = Hex("#2A3040"), StrokeThickness = 1.5, StrokeDashArray = new DoubleCollection { 4, 3 } };
+            var rect = new Shapes.Rectangle { RadiusX = 12, RadiusY = 12, Stroke = Hex("#313137"), StrokeThickness = 1.5, StrokeDashArray = new DoubleCollection { 4, 3 } };
             add.Children.Add(rect);
             var sp = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
             sp.Children.Add(Glyph("", 22, Br("Sub")));
@@ -1083,7 +1097,7 @@ namespace GameBoost
             sp.Children.Add(t);
             add.Children.Add(sp);
             add.MouseEnter += (s, e) => rect.Stroke = Br("Accent");
-            add.MouseLeave += (s, e) => rect.Stroke = Hex("#2A3040");
+            add.MouseLeave += (s, e) => rect.Stroke = Hex("#313137");
             add.MouseLeftButtonUp += (s, e) => OpenEditor(null);
             w.Children.Add(add);
         }
@@ -1095,7 +1109,7 @@ namespace GameBoost
             var head = new Border { Height = 126, CornerRadius = new CornerRadius(11, 11, 0, 0), Background = HeaderBrush(g) };
             var hg = new Grid();
             if (string.IsNullOrEmpty(g.Image) || !File.Exists(g.Image)) AddIconCenter(hg, g, 40, new Thickness(0));
-            string srcCol = g.Source == "Steam" ? "#66C0F4" : g.Source == "Epic" ? "#E8EAF0" : g.Source == "Riot" ? "#FF6B6B" : "#B9A8FF";
+            string srcCol = g.Source == "Steam" ? "#66C0F4" : g.Source == "Epic" ? "#F5F5F7" : g.Source == "Riot" ? "#FF6B6B" : "#FF9AA1";
             hg.Children.Add(new Border
             {
                 CornerRadius = new CornerRadius(6), Padding = new Thickness(7, 2, 7, 3), Background = new SolidColorBrush(Color.FromArgb(190, 10, 12, 18)),
@@ -1123,7 +1137,7 @@ namespace GameBoost
             Grid.SetColumn(play, 2); bottom.Children.Add(play);
             sp.Children.Add(bottom);
             card.Child = sp;
-            card.MouseEnter += (s, e) => card.BorderBrush = Hex("#3A3170");
+            card.MouseEnter += (s, e) => card.BorderBrush = Hex("#5A141A");
             card.MouseLeave += (s, e) => card.BorderBrush = Br("Line");
             return card;
         }
@@ -1196,10 +1210,10 @@ namespace GameBoost
                     var tw = t;
                     var badges = new List<UIElement>();
                     if (tw.Impact == 3) badges.Add(Badge(Tr("Impacto alto"), "#F5B04B", "#2A2113"));
-                    else if (tw.Impact == 2) badges.Add(Badge(Tr("Impacto medio"), "#8FA8FF", "#172036"));
-                    else badges.Add(Badge(Tr("Impacto bajo"), "#8A90A2", "#1A1E29"));
-                    if (tw.Rec) badges.Add(Badge(Tr("Recomendado"), "#B3A3FF", "#211B40"));
-                    if (tw.Reboot) badges.Add(Badge(Tr("Requiere reinicio"), "#8A90A2", "#1A1E29"));
+                    else if (tw.Impact == 2) badges.Add(Badge(Tr("Impacto medio"), "#D4D4D8", "#232327"));
+                    else badges.Add(Badge(Tr("Impacto bajo"), "#A1A1AA", "#1C1C20"));
+                    if (tw.Rec) badges.Add(Badge(Tr("Recomendado"), "#FF8A93", "#2E1015"));
+                    if (tw.Reboot) badges.Add(Badge(Tr("Requiere reinicio"), "#A1A1AA", "#1C1C20"));
                     var sw = new CheckBox { Style = St("Switch"), IsChecked = tw.State, IsEnabled = statesLoaded };
                     sw.Click += (s, e) => ToggleTweak(tw, sw);
                     tweakSwitches[tw.Id] = sw;
@@ -1223,6 +1237,7 @@ namespace GameBoost
                 Ui(() =>
                 {
                     t.State = now; sw.IsChecked = now; sw.IsEnabled = true;
+                    SyncTweakSwitches(t);
                     if (err != null) { Toast(Tf("No se pudo cambiar '{0}'", t.Title) + ": " + err, 3); Log("Error: " + t.Title + ": " + err); }
                     else
                     {
@@ -1248,6 +1263,7 @@ namespace GameBoost
                         t.State = states[t.Id];
                         CheckBox sw;
                         if (tweakSwitches.TryGetValue(t.Id, out sw)) { sw.IsChecked = t.State; sw.IsEnabled = true; }
+                        if (netSwitches.TryGetValue(t.Id, out sw)) { sw.IsChecked = t.State; sw.IsEnabled = true; }
                     }
                     UpdateScore(); BuildRecs();
                 });
@@ -1437,7 +1453,7 @@ namespace GameBoost
             if (baseV <= 0 || now < 0) return null;
             double pct = (now - baseV) / baseV * 100;
             string txt = (pct >= 0 ? "+" : "−") + Math.Abs(pct).ToString("0.0") + "%";
-            if (Math.Abs(pct) < 1.5) return new[] { "≈ " + Math.Abs(pct).ToString("0.0") + "%", "#8A90A2", "#1A1E29" };
+            if (Math.Abs(pct) < 1.5) return new[] { "≈ " + Math.Abs(pct).ToString("0.0") + "%", "#A1A1AA", "#1C1C20" };
             bool better = higherBetter ? pct > 0 : pct < 0;
             return better ? new[] { txt, "#4ADE80", "#11261A" } : new[] { txt, "#F87171", "#2A1414" };
         }
@@ -1506,7 +1522,7 @@ namespace GameBoost
                 var r = bench.Items[i];
                 int idx = i;
                 var badges = new List<UIElement>();
-                if (r == bl) badges.Add(Badge(Tr("Referencia"), "#C9C2FF", "#2B2260"));
+                if (r == bl) badges.Add(Badge(Tr("Referencia"), "#FFC2C6", "#4A1219"));
                 if (r.GameMode) badges.Add(Badge(Tr("Modo Juego"), "#4ADE80", "#11261A"));
                 var right = new StackPanel { Orientation = Orientation.Horizontal };
                 var sc = Txt(r.Score.ToString("N0"), 15, Br("Text"), FontWeights.SemiBold); sc.VerticalAlignment = VerticalAlignment.Center; sc.Margin = new Thickness(0, 0, 14, 0);
@@ -1582,7 +1598,7 @@ namespace GameBoost
                 rb.Checked += (s, e) => { settings.Lang = code; Store.Save("settings.json", settings); restart.Visibility = Visibility.Visible; };
                 seg.Children.Add(rb);
             }
-            var segBorder = new Border { Background = Hex("#0E1117"), CornerRadius = new CornerRadius(9), Padding = new Thickness(3), BorderBrush = Br("Line"), BorderThickness = new Thickness(1), Child = seg };
+            var segBorder = new Border { Background = Hex("#0F0F12"), CornerRadius = new CornerRadius(9), Padding = new Thickness(3), BorderBrush = Br("Line"), BorderThickness = new Thickness(1), Child = seg };
             var langRight = new StackPanel { Orientation = Orientation.Horizontal };
             langRight.Children.Add(restart); langRight.Children.Add(segBorder);
             list.Children.Add(Row(Tr("Idioma") + " · Language", Tr("Se aplica al reiniciar GameBoost."), null, langRight, true));
@@ -1805,7 +1821,7 @@ namespace GameBoost
                 var g = new Grid();
                 g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 g.ColumnDefinitions.Add(new ColumnDefinition());
-                g.Children.Add(IconBox(t[0], "#A996FF", "#1C1838"));
+                g.Children.Add(IconBox(t[0], "#FF6B75", "#2A0E12"));
                 var sp = new StackPanel { Margin = new Thickness(14, 0, 0, 0) };
                 var h = Txt(t[1], 13.5, Br("Text"), FontWeights.SemiBold); h.TextWrapping = TextWrapping.Wrap;
                 sp.Children.Add(h);
@@ -1869,13 +1885,13 @@ namespace GameBoost
                 var g = new Grid();
                 g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 g.ColumnDefinitions.Add(new ColumnDefinition());
-                g.Children.Add(IconBox(app.Glyph, app.Mine ? "#FFFFFF" : "#A996FF", app.Mine ? "#5B47D6" : "#1C1838", 38));
+                g.Children.Add(IconBox(app.Glyph, app.Mine ? "#FFFFFF" : "#FF6B75", app.Mine ? "#C41C28" : "#2A0E12", 38));
                 var sp = new StackPanel { Margin = new Thickness(14, 0, 0, 0) };
                 sp.Children.Add(Txt(app.Name, 13.5, Br("Text"), FontWeights.SemiBold));
                 var badges = new WrapPanel { Margin = new Thickness(-8, 6, 0, 0) };
-                if (app.Mine) badges.Children.Add(Badge(Tr("Para tu PC"), "#C9C2FF", "#2B2260"));
+                if (app.Mine) badges.Children.Add(Badge(Tr("Para tu PC"), "#FFC2C6", "#4A1219"));
                 if (inst) badges.Children.Add(Badge(Tr("Instalado"), "#4ADE80", "#11261A"));
-                badges.Children.Add(Badge(app.Price, "#8A90A2", "#1A1E29"));
+                badges.Children.Add(Badge(app.Price, "#A1A1AA", "#1C1C20"));
                 sp.Children.Add(badges);
                 var c = Cap(app.Desc); c.Margin = new Thickness(0, 8, 0, 12);
                 sp.Children.Add(c);
@@ -2238,7 +2254,7 @@ namespace GameBoost
                     tl.Outline = false; tl.Glow = false; tl.Dot = idx == 4; tl.DotSize = idx == 4 ? 6 : 3; tl.DotOwnColor = false;
                     cell.Children.Add(new CrosshairVisual { Look = tl });
                 }
-                var box = new Border { Width = 64, Height = 64, CornerRadius = new CornerRadius(10), Background = Hex("#0E1117"), Child = cell,
+                var box = new Border { Width = 64, Height = 64, CornerRadius = new CornerRadius(10), Background = Hex("#0F0F12"), Child = cell,
                     BorderThickness = new Thickness(2), BorderBrush = CL.Style == idx ? Br("Accent") : Br("Line") };
                 var tile = new StackPanel { Margin = new Thickness(0, 0, 12, 12), Cursor = Cursors.Hand, Background = Brushes.Transparent, Width = 72 };
                 tile.Children.Add(box);
@@ -2388,8 +2404,410 @@ namespace GameBoost
                 rb.Checked += (s, e) => set(code);
                 seg.Children.Add(rb);
             }
-            var b = new Border { Background = Hex("#0E1117"), CornerRadius = new CornerRadius(9), Padding = new Thickness(3), BorderBrush = Br("Line"), BorderThickness = new Thickness(1), Child = seg };
+            var b = new Border { Background = Hex("#0F0F12"), CornerRadius = new CornerRadius(9), Padding = new Thickness(3), BorderBrush = Br("Line"), BorderThickness = new Thickness(1), Child = seg };
             list.Children.Add(Row(Tr(title), Tr(desc), null, b, first));
+        }
+
+        // ============================================================ animaciones
+        // Aparición con retraso: el elemento entra desde abajo (o desde la izquierda) mientras se hace visible.
+        static void AnimateIn(UIElement c, int delayMs, double distance, bool fromLeft)
+        {
+            var anim = new DoubleAnimationUsingKeyFrames();
+            anim.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            anim.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(delayMs))));
+            anim.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(delayMs + 260)), new CubicEase { EasingMode = EasingMode.EaseOut }));
+            c.BeginAnimation(UIElement.OpacityProperty, anim);
+            var t = c.RenderTransform as TranslateTransform;
+            if (t == null && (c.RenderTransform == null || c.RenderTransform == Transform.Identity)) { t = new TranslateTransform(); c.RenderTransform = t; }
+            if (t == null) return;
+            var move = new DoubleAnimationUsingKeyFrames();
+            move.KeyFrames.Add(new DiscreteDoubleKeyFrame(distance, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            move.KeyFrames.Add(new DiscreteDoubleKeyFrame(distance, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(delayMs))));
+            move.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(delayMs + 320)), new CubicEase { EasingMode = EasingMode.EaseOut }));
+            t.BeginAnimation(fromLeft ? TranslateTransform.XProperty : TranslateTransform.YProperty, move);
+        }
+
+        // Al abrir: la ventana crece un poco mientras aparece, el menú entra en cascada y el logo "respira".
+        void AnimateStartup()
+        {
+            var root = win.Content as FrameworkElement;
+            if (root != null)
+            {
+                root.RenderTransformOrigin = new Point(0.5, 0.5);
+                var sc = new ScaleTransform(0.97, 0.97);
+                root.RenderTransform = sc;
+                root.Opacity = 0;
+                RoutedEventHandler onShow = null;
+                onShow = (s, e) =>
+                {
+                    win.Loaded -= onShow;
+                    var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+                    root.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(320)));
+                    sc.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(0.97, 1, TimeSpan.FromMilliseconds(420)) { EasingFunction = ease });
+                    sc.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(0.97, 1, TimeSpan.FromMilliseconds(420)) { EasingFunction = ease });
+                    int i = 0;
+                    foreach (UIElement c in E<StackPanel>("NavList").Children) AnimateIn(c, 120 + i++ * 28, -18, true);
+                };
+                if (win.IsLoaded) onShow(null, null); else win.Loaded += onShow;
+            }
+            var logo = E<Border>("Logo");
+            var glow = logo != null ? logo.Effect as System.Windows.Media.Effects.DropShadowEffect : null;
+            if (glow != null)
+                glow.BeginAnimation(System.Windows.Media.Effects.DropShadowEffect.BlurRadiusProperty,
+                    new DoubleAnimation(10, 26, TimeSpan.FromSeconds(2.2)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut } });
+        }
+
+        void SyncTweakSwitches(Tweak t)
+        {
+            CheckBox sw;
+            if (tweakSwitches.TryGetValue(t.Id, out sw)) sw.IsChecked = t.State;
+            if (netSwitches.TryGetValue(t.Id, out sw)) sw.IsChecked = t.State;
+        }
+
+        // ============================================================ red y ping
+        readonly Dictionary<string, CheckBox> netSwitches = new Dictionary<string, CheckBox>();
+        readonly List<long> netSamples = new List<long>(); // ms; -1 = paquete perdido
+        string netTarget = "1.1.1.1";
+        volatile bool netLive;
+        volatile int netGen;
+        bool netAutoMeasured, netRegionsBusy, netDnsBusy;
+        TextBlock netPing, netAvg, netJitter, netLoss, netScale;
+        Canvas netCanvas;
+        Shapes.Polyline netLine;
+        Shapes.Polygon netArea;
+
+        Brush QualityBrush(double ms) { return ms < 60 ? Br("Ok") : ms < 120 ? Br("Warn") : Br("Bad"); }
+
+        void BuildNet()
+        {
+            Tweaks.GameProcesses = () =>
+            {
+                var l = KnownGames.Keys.ToList();
+                l.AddRange(games.Games.ToList().Where(g => !string.IsNullOrEmpty(g.Proc)).Select(g => g.Proc));
+                return l;
+            };
+
+            // Fichas de estadísticas
+            var stats = E<UniformGrid>("NetStats");
+            Func<string, bool, TextBlock> tile = (label, last) =>
+            {
+                var v = new TextBlock { Text = "—", FontSize = 24, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 4, 0, 0) };
+                var sp = new StackPanel();
+                sp.Children.Add(new TextBlock { Text = label, Foreground = Br("Sub"), FontSize = 12 });
+                sp.Children.Add(v);
+                stats.Children.Add(new Border { Background = Hex("#0F0F12"), CornerRadius = new CornerRadius(10), Padding = new Thickness(14, 10, 14, 12),
+                                                Margin = new Thickness(0, 0, last ? 0 : 10, 0), BorderBrush = Br("Line"), BorderThickness = new Thickness(1), Child = sp });
+                return v;
+            };
+            netPing = tile(Tr("Ping actual"), false);
+            netAvg = tile(Tr("Media (1 min)"), false);
+            netJitter = tile(Tr("Jitter"), false);
+            netLoss = tile(Tr("Pérdida"), true);
+
+            // Destino del ping
+            var custom = new TextBox { Width = 180, Visibility = Visibility.Collapsed, Margin = new Thickness(8, 0, 0, 0), ToolTip = Tr("IP o dominio del servidor de tu juego") };
+            Action commit = () =>
+            {
+                string h = custom.Text.Trim();
+                if (h.Length == 0) return;
+                SetNetTarget(h);
+            };
+            custom.LostFocus += (s, e) => commit();
+            custom.KeyDown += (s, e) => { if (e.Key == Key.Enter) commit(); };
+            var targets = new[] { new[] { "1.1.1.1", "Cloudflare" }, new[] { "8.8.8.8", "Google" }, new[] { "custom", Tr("Mi servidor") } };
+            var tg = E<WrapPanel>("NetTargets");
+            tg.Children.Add(SegBox("nettarget", targets, "1.1.1.1", c =>
+            {
+                custom.Visibility = c == "custom" ? Visibility.Visible : Visibility.Collapsed;
+                if (c == "custom") { custom.Focus(); commit(); } else SetNetTarget(c);
+            }));
+            tg.Children.Add(custom);
+            UpdateNetTargetText();
+
+            // Gráfica
+            netCanvas = new Canvas();
+            var area = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1) };
+            area.GradientStops.Add(new GradientStop(Color.FromArgb(0x66, 0xE5, 0x24, 0x2F), 0));
+            area.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, 0xE5, 0x24, 0x2F), 1));
+            netArea = new Shapes.Polygon { Fill = area };
+            netLine = new Shapes.Polyline { Stroke = Br("Accent"), StrokeThickness = 2, StrokeLineJoin = PenLineJoin.Round };
+            netScale = new TextBlock { Foreground = Br("Mute"), FontSize = 11 };
+            Canvas.SetLeft(netScale, 10); Canvas.SetTop(netScale, 6);
+            netCanvas.Children.Add(netArea); netCanvas.Children.Add(netLine); netCanvas.Children.Add(netScale);
+            netCanvas.SizeChanged += (s, e) => DrawNetChart();
+            E<Border>("NetChartBox").Child = netCanvas;
+
+            E<Button>("BtnNetRegions").Click += (s, e) => MeasureRegions();
+            E<Button>("BtnNetDns").Click += (s, e) => MeasureDns();
+            E<Button>("BtnNetOptimize").Click += (s, e) => OptimizeNetwork();
+            RenderRegions(new Dictionary<NetRegion, double>(), false);
+            RenderDns(new List<NetDns>(), new Dictionary<NetDns, double>(), null, false);
+            BuildNetTweaks();
+        }
+
+        void SetNetTarget(string host)
+        {
+            if (host == netTarget) return;
+            netTarget = host;
+            netSamples.Clear();
+            netGen++;
+            UpdateNetTargetText();
+            DrawNetChart();
+            foreach (var tb in new[] { netPing, netAvg, netJitter, netLoss }) { tb.Text = "—"; tb.Foreground = Br("Text"); }
+            if (netLive) { netLive = false; StartNetLive(); }
+        }
+
+        void UpdateNetTargetText() { E<TextBlock>("NetTargetText").Text = Tf("Midiendo contra {0} cada segundo", netTarget); }
+
+        void StartNetLive()
+        {
+            if (netLive || Program.SelfTest) return;
+            netLive = true;
+            int gen = ++netGen;
+            new Thread(() =>
+            {
+                while (netLive && gen == netGen && !closing)
+                {
+                    string target = netTarget;
+                    var sw = Stopwatch.StartNew();
+                    long ms = NetTools.Ping(target, 1000);
+                    Ui(() => { if (gen == netGen && target == netTarget) AddNetSample(ms); });
+                    int rest = 1000 - (int)sw.ElapsedMilliseconds;
+                    if (rest > 0) Thread.Sleep(rest);
+                }
+            }) { IsBackground = true }.Start();
+        }
+
+        void StopNetLive() { netLive = false; netGen++; }
+
+        void AddNetSample(long ms)
+        {
+            netSamples.Add(ms);
+            if (netSamples.Count > 60) netSamples.RemoveAt(0);
+            var ok = netSamples.Where(x => x >= 0).ToList();
+            netPing.Text = ms < 0 ? Tr("Perdido") : ms + " ms";
+            netPing.Foreground = ms < 0 ? Br("Bad") : QualityBrush(ms);
+            if (ok.Count > 0)
+            {
+                double avg = ok.Average();
+                netAvg.Text = Math.Round(avg) + " ms"; netAvg.Foreground = QualityBrush(avg);
+                double jit = 0;
+                for (int i = 1; i < ok.Count; i++) jit += Math.Abs(ok[i] - ok[i - 1]);
+                jit = ok.Count > 1 ? jit / (ok.Count - 1) : 0;
+                netJitter.Text = Math.Round(jit, 1) + " ms"; netJitter.Foreground = jit < 5 ? Br("Ok") : jit < 15 ? Br("Warn") : Br("Bad");
+            }
+            double loss = 100.0 * (netSamples.Count - ok.Count) / netSamples.Count;
+            netLoss.Text = Math.Round(loss, 1) + " %"; netLoss.Foreground = loss == 0 ? Br("Ok") : loss < 3 ? Br("Warn") : Br("Bad");
+            DrawNetChart();
+        }
+
+        void DrawNetChart()
+        {
+            if (netCanvas == null) return;
+            double w = netCanvas.ActualWidth, h = netCanvas.ActualHeight;
+            if (w <= 0 || h <= 0) return;
+            var ok = netSamples.Where(x => x >= 0).ToList();
+            double max = Math.Max(60, (ok.Count > 0 ? ok.Max() : 0) * 1.25);
+            netScale.Text = Tf("escala: {0} ms", Math.Round(max));
+            var pts = new PointCollection();
+            for (int i = 0; i < netSamples.Count; i++)
+            {
+                double v = netSamples[i] < 0 ? max : netSamples[i];
+                double x = netSamples.Count == 1 ? w : w * (i + 60 - netSamples.Count) / 59.0;
+                pts.Add(new Point(x, h - 6 - (v / max) * (h - 26)));
+            }
+            netLine.Points = pts;
+            var poly = new PointCollection(pts);
+            if (pts.Count > 0) { poly.Add(new Point(pts[pts.Count - 1].X, h)); poly.Add(new Point(pts[0].X, h)); }
+            netArea.Points = poly;
+        }
+
+        void MeasureRegions()
+        {
+            if (netRegionsBusy || Program.SelfTest) return;
+            netRegionsBusy = true;
+            var btn = E<Button>("BtnNetRegions");
+            btn.IsEnabled = false;
+            var res = new Dictionary<NetRegion, double>();
+            RenderRegions(res, true);
+            int left = NetTools.Regions.Length;
+            foreach (var r in NetTools.Regions)
+            {
+                var reg = r;
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    double ms = NetTools.TcpLatency(reg.Host);
+                    Ui(() =>
+                    {
+                        res[reg] = ms; left--;
+                        RenderRegions(res, left > 0);
+                        if (left == 0) { netRegionsBusy = false; btn.IsEnabled = true; }
+                    });
+                });
+            }
+        }
+
+        // Fila con barra animada (más larga = más lejos) y la latencia.
+        FrameworkElement LatencyRight(bool has, double v, double max, bool busy, FrameworkElement extra)
+        {
+            var right = new StackPanel { Orientation = Orientation.Horizontal };
+            var track = new Border { Width = 150, Height = 6, CornerRadius = new CornerRadius(3), Background = Hex("#1C1C20"), VerticalAlignment = VerticalAlignment.Center };
+            var fill = new Border { Height = 6, CornerRadius = new CornerRadius(3), HorizontalAlignment = HorizontalAlignment.Left, Width = 0, Background = has && v >= 0 ? QualityBrush(v) : Br("Line") };
+            track.Child = fill;
+            if (has && v >= 0)
+                fill.BeginAnimation(FrameworkElement.WidthProperty, new DoubleAnimation(0, Math.Max(6, 150 * v / Math.Max(1, max)), TimeSpan.FromMilliseconds(520)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+            right.Children.Add(track);
+            string txt = !has ? (busy ? Tr("Midiendo...") : "—") : v < 0 ? Tr("Sin respuesta") : Math.Round(v) + " ms";
+            right.Children.Add(new TextBlock { Text = txt, Width = 100, TextAlignment = TextAlignment.Right, Foreground = has && v >= 0 ? Br("Text") : Br("Sub"), VerticalAlignment = VerticalAlignment.Center });
+            if (extra != null) { extra.Margin = new Thickness(14, 0, 0, 0); right.Children.Add(extra); }
+            return right;
+        }
+
+        void RenderRegions(Dictionary<NetRegion, double> res, bool busy)
+        {
+            var list = E<StackPanel>("NetRegions");
+            list.Children.Clear();
+            var valid = res.Values.Where(v => v >= 0).ToList();
+            double max = valid.Count > 0 ? valid.Max() : 100, best = valid.Count > 0 ? valid.Min() : -1;
+            var ordered = NetTools.Regions.OrderBy(r => { double v; return res.TryGetValue(r, out v) && v >= 0 ? v : double.MaxValue; }).ToList();
+            bool first = true;
+            foreach (var r in ordered)
+            {
+                double v; bool has = res.TryGetValue(r, out v);
+                var badges = has && v >= 0 && v == best && !busy ? new List<UIElement> { Badge(Tr("Más cercana"), "#FFC2C6", "#2A0E12") } : null;
+                list.Children.Add(Row(Tr(r.Name), r.Host, badges, LatencyRight(has, v, max, busy, null), first));
+                first = false;
+            }
+        }
+
+        void MeasureDns()
+        {
+            if (netDnsBusy || Program.SelfTest) return;
+            netDnsBusy = true;
+            var btn = E<Button>("BtnNetDns");
+            btn.IsEnabled = false;
+            Bg(() =>
+            {
+                string cur = NetTools.CurrentDns();
+                var entries = NetTools.DnsServers.ToList();
+                NetDns current = null;
+                if (cur != null)
+                {
+                    current = entries.FirstOrDefault(d => d.Primary == cur || d.Secondary == cur);
+                    if (current == null) { current = new NetDns { Name = Tr("Tu DNS actual"), Primary = cur }; entries.Insert(0, current); }
+                }
+                var res = new Dictionary<NetDns, double>();
+                Ui(() => RenderDns(entries, res, current, true));
+                int left = entries.Count;
+                foreach (var d in entries)
+                {
+                    var dns = d;
+                    ThreadPool.QueueUserWorkItem(_ =>
+                    {
+                        double ms = NetTools.DnsLatency(dns.Primary);
+                        Ui(() =>
+                        {
+                            res[dns] = ms; left--;
+                            RenderDns(entries, res, current, left > 0);
+                            if (left == 0) { netDnsBusy = false; btn.IsEnabled = true; }
+                        });
+                    });
+                }
+            });
+        }
+
+        void RenderDns(List<NetDns> entries, Dictionary<NetDns, double> res, NetDns current, bool busy)
+        {
+            var list = E<StackPanel>("NetDnsList");
+            list.Children.Clear();
+            if (entries.Count == 0)
+            {
+                list.Children.Add(Row(Tr("Compara los DNS públicos"), Tr("Pulsa Comparar DNS: mide cuánto tarda cada uno en responder desde tu conexión."), null, null, true));
+                return;
+            }
+            var valid = res.Values.Where(v => v >= 0).ToList();
+            double max = valid.Count > 0 ? valid.Max() : 100, best = valid.Count > 0 ? valid.Min() : -1;
+            var ordered = entries.OrderBy(d => { double v; return res.TryGetValue(d, out v) && v >= 0 ? v : double.MaxValue; }).ToList();
+            bool first = true;
+            foreach (var d in ordered)
+            {
+                var dns = d;
+                double v; bool has = res.TryGetValue(d, out v);
+                var badges = new List<UIElement>();
+                if (has && v >= 0 && v == best && !busy) badges.Add(Badge(Tr("Más rápido"), "#FFC2C6", "#2A0E12"));
+                if (d == current) badges.Add(Badge(Tr("En uso"), "#4ADE80", "#11261A"));
+                FrameworkElement use = null;
+                if (d != current && d.Secondary != null)
+                    use = Btn(Tr("Usar"), "Secondary", () => ApplyDns(dns));
+                list.Children.Add(Row(dns.Name, dns.Primary + (dns.Secondary != null ? " · " + dns.Secondary : ""), badges, LatencyRight(has, v, max, busy, use), first));
+                first = false;
+            }
+            var reset = Btn(Tr("DNS automático"), "Secondary", () => ApplyDns(null));
+            list.Children.Add(Row(Tr("Volver al DNS de tu proveedor"), Tr("Deshace el cambio y usa el DNS que da tu router."), null, reset, false));
+        }
+
+        void ApplyDns(NetDns d)
+        {
+            Toast(d == null ? Tr("Restaurando el DNS automático...") : Tf("Cambiando el DNS a {0}...", d.Name), 2, true);
+            Bg(() =>
+            {
+                Tweaks.SetDns(d == null ? null : d.Primary, d == null ? null : d.Secondary);
+                Ui(() =>
+                {
+                    Toast(d == null ? Tr("DNS automático restaurado") : Tf("DNS cambiado a {0}", d.Name), 0);
+                    Log(d == null ? Tr("DNS automático restaurado") : Tf("DNS cambiado a {0}", d.Name));
+                    RefreshTweakStates();
+                    if (!netDnsBusy) MeasureDns();
+                });
+            });
+        }
+
+        void BuildNetTweaks()
+        {
+            var sp = E<StackPanel>("NetTweaks");
+            sp.Children.Clear(); netSwitches.Clear();
+            bool first = true;
+            foreach (var t in Tweaks.All.Where(x => x.Cat == "Red"))
+            {
+                var tw = t;
+                var badges = new List<UIElement>();
+                if (tw.Impact >= 2) badges.Add(Badge(Tr("Impacto medio"), "#D4D4D8", "#232327"));
+                if (tw.Reboot) badges.Add(Badge(Tr("Requiere reinicio"), "#A1A1AA", "#1C1C20"));
+                var sw = new CheckBox { Style = St("Switch"), IsChecked = tw.State, IsEnabled = statesLoaded };
+                sw.Click += (s, e) => ToggleTweak(tw, sw);
+                netSwitches[tw.Id] = sw;
+                sp.Children.Add(Row(tw.Title, tw.Desc, badges, sw, first));
+                first = false;
+            }
+        }
+
+        // Activa los ajustes de red que bajan la latencia (no cambia el DNS: eso se elige arriba, midiendo).
+        void OptimizeNetwork()
+        {
+            var ids = new[] { "nagle", "netthrottle", "p2p", "qos" };
+            var todo = Tweaks.All.Where(t => ids.Contains(t.Id) && !t.State).ToList();
+            if (todo.Count == 0) { Toast(Tr("Tu red ya está optimizada"), 0); return; }
+            var btn = E<Button>("BtnNetOptimize");
+            btn.IsEnabled = false;
+            Toast(Tr("Optimizando la red..."), 2, true);
+            Bg(() =>
+            {
+                int ok = 0; bool reboot = false;
+                foreach (var t in todo)
+                {
+                    try { t.Apply(); if (t.SafeCheck()) { ok++; if (t.Reboot) reboot = true; } }
+                    catch (Exception ex) { Log("Error: " + t.Title + ": " + ex.Message); }
+                }
+                Ui(() =>
+                {
+                    btn.IsEnabled = true;
+                    if (reboot) rebootPending = true;
+                    string msg = Tf("{0} ajustes de red aplicados", ok) + (reboot ? " · " + Tr("requiere reinicio") : "");
+                    Toast(msg, ok == todo.Count ? 0 : 3);
+                    Log(msg);
+                    RefreshTweakStates();
+                });
+            });
         }
 
         Border SegBox(string group, IEnumerable<string[]> opts, string current, Action<string> set)
@@ -2402,7 +2820,7 @@ namespace GameBoost
                 rb.Checked += (s, e) => set(code);
                 seg.Children.Add(rb);
             }
-            return new Border { Background = Hex("#0E1117"), CornerRadius = new CornerRadius(9), Padding = new Thickness(3), BorderBrush = Br("Line"),
+            return new Border { Background = Hex("#0F0F12"), CornerRadius = new CornerRadius(9), Padding = new Thickness(3), BorderBrush = Br("Line"),
                                 BorderThickness = new Thickness(1), Child = seg, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
         }
 
@@ -2431,6 +2849,16 @@ namespace GameBoost
             var sb = SegBox("aimsize", sizes, aimSize.ToString(), c => { aimSize = int.Parse(c); aimTrainer.SetSize(aimSize); });
             sb.Margin = new Thickness(12, 0, 0, 0);
             bar.Children.Add(sb);
+            AimTrainer.SoundOn = !aimHist.Mute;
+            var sounds = new[] { new[] { "on", Tr("Con sonido") }, new[] { "off", Tr("Sin sonido") } };
+            var snd = SegBox("aimsound", sounds, aimHist.Mute ? "off" : "on", c =>
+            {
+                aimHist.Mute = c == "off";
+                AimTrainer.SoundOn = !aimHist.Mute;
+                if (!Program.SelfTest) Store.Save("aim.json", aimHist);
+            });
+            snd.Margin = new Thickness(12, 0, 0, 0);
+            bar.Children.Add(snd);
             E<TextBlock>("AimModeDesc").Text = Tr(AimTrainer.ModeDesc(aimMode));
             E<Button>("BtnAimFull").Click += (s, e) => OpenAimFullscreen();
             BuildAimStats();
@@ -2476,7 +2904,7 @@ namespace GameBoost
             var w = new Window
             {
                 Title = "GameBoost", WindowStyle = WindowStyle.None, ResizeMode = ResizeMode.NoResize, WindowState = WindowState.Maximized,
-                Topmost = true, ShowInTaskbar = false, Background = Hex("#0B0E14"), Content = t, Owner = win.IsVisible ? win : null
+                Topmost = true, ShowInTaskbar = false, Background = Hex("#0B0B0D"), Content = t, Owner = win.IsVisible ? win : null
             };
             w.KeyDown += (s, e) => { if (e.Key == Key.Escape) w.Close(); };
             w.Show();
@@ -2497,6 +2925,7 @@ namespace GameBoost
                 var m = new Macro { Name = Tr("Nueva macro") };
                 m.Steps.Add(new MacroStep { Kind = "text" });
                 macroHost.Data.Items.Add(m);
+                macroOpen.Add(m.Id);
                 MacroSaved(false);
                 RebuildMacros();
             };
@@ -2557,6 +2986,7 @@ namespace GameBoost
         {
             var m = MacroExample(i);
             macroHost.Data.Items.Add(m);
+            macroOpen.Add(m.Id);
             MacroSaved(true);
             RebuildMacros();
             Toast(Tf("Macro añadida: {0} ({1})", m.Name, m.Hotkey), 0);
@@ -2576,7 +3006,12 @@ namespace GameBoost
             list.Children.Clear();
             if (macroHost.Data.Items.Count == 0)
             {
-                list.Children.Add(new Border { Style = St("CardB"), Child = Cap(Tr("Aún no tienes macros. Crea una o añade un ejemplo de arriba.")) });
+                var empty = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 18, 0, 18) };
+                empty.Children.Add(new Border { Width = 52, Height = 52, CornerRadius = new CornerRadius(14), Background = Br("AccentSoft"), Child = Glyph("", 22, Br("Accent")) });
+                var t = Cap(Tr("Aún no tienes macros. Crea una o añade un ejemplo de arriba."));
+                t.Margin = new Thickness(0, 12, 0, 0); t.TextAlignment = TextAlignment.Center;
+                empty.Children.Add(t);
+                list.Children.Add(new Border { Style = St("CardB"), Child = empty });
                 return;
             }
             foreach (var m in macroHost.Data.Items) list.Children.Add(MacroCard(m));
@@ -2646,64 +3081,161 @@ namespace GameBoost
             return b;
         }
 
+        readonly HashSet<string> macroOpen = new HashSet<string>();
+
+        static string KindGlyph(string kind)
+        {
+            return kind == "keys" ? "" : kind == "mouse" ? "" : kind == "wait" ? "" : kind == "open" ? "" : "";
+        }
+
+        string MacroSummary(Macro m)
+        {
+            if (m.Steps.Count == 0) return Tr("Sin pasos todavía");
+            var names = MacroKinds().ToDictionary(k => k[0], k => k[1]);
+            var kinds = m.Steps.Select(s => names.ContainsKey(s.Kind) ? names[s.Kind] : s.Kind).Distinct();
+            return Tf("{0} pasos", m.Steps.Count) + " · " + string.Join(", ", kinds);
+        }
+
+        Button IconTextBtn(string glyph, string text, string style, Action click)
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            row.Children.Add(Glyph(glyph, 12, null));
+            row.Children.Add(new TextBlock { Text = text, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
+            var b = new Button { Style = St(style), Content = row, Padding = new Thickness(12, 7, 12, 7), FontSize = 12.5 };
+            b.Click += (s, e) => click();
+            return b;
+        }
+
+        // Tarjeta plegable: cabecera con resumen (clic para abrir) y, debajo, el editor completo.
         FrameworkElement MacroCard(Macro m)
         {
+            bool open = macroOpen.Contains(m.Id);
             var sp = new StackPanel();
-            var card = new Border { Style = St("CardB"), Margin = new Thickness(0, 0, 0, 14), Child = sp };
+            var card = new Border { Style = St("CardB"), Margin = new Thickness(0, 0, 0, 12), Padding = new Thickness(0), Child = sp };
 
-            var head = new Grid();
-            head.ColumnDefinitions.Add(new ColumnDefinition());
-            head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var name = new TextBox { Text = m.Name, FontSize = 14, FontWeight = FontWeights.SemiBold, MinWidth = 220, MaxWidth = 340, HorizontalAlignment = HorizontalAlignment.Left };
-            name.LostFocus += (s, e) => { m.Name = name.Text.Trim(); MacroSaved(false); };
-            head.Children.Add(name);
-
-            var hk = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(16, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-            hk.Children.Add(new TextBlock { Text = Tr("Atajo"), Foreground = Br("Sub"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
-            hk.Children.Add(KeyRecorder(m.Hotkey, true, v => { m.Hotkey = v; MacroSaved(true); }));
-            Grid.SetColumn(hk, 1); head.Children.Add(hk);
-
-            var sw = new CheckBox { Style = St("Switch"), IsChecked = m.Enabled, Margin = new Thickness(16, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = Tr("Activar o desactivar esta macro") };
-            sw.Click += (s, e) => { m.Enabled = sw.IsChecked == true; MacroSaved(true); };
-            Grid.SetColumn(sw, 2); head.Children.Add(sw);
-
-            bool armed = false;
-            var del = new Button { Style = St("Ghost"), Foreground = Br("Bad"), Padding = new Thickness(10, 6, 10, 6), Margin = new Thickness(10, 0, 0, 0), Content = Tr("Eliminar") };
-            del.Click += (s, e) =>
+            // ---- cabecera
+            var head = new Grid { Background = Brushes.Transparent, Cursor = Cursors.Hand, Margin = new Thickness(16, 12, 12, 12) };
+            foreach (var w in new[] { GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto, GridLength.Auto, GridLength.Auto })
+                head.ColumnDefinitions.Add(new ColumnDefinition { Width = w });
+            var iconBg = new Border { Width = 38, Height = 38, CornerRadius = new CornerRadius(10), Background = m.Enabled ? Br("AccentSoft") : Hex("#1C1C20"),
+                                      Child = Glyph("", 16, m.Enabled ? Br("Accent") : Br("Sub")) };
+            head.Children.Add(iconBg);
+            var texts = new StackPanel { Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            var title = Txt(string.IsNullOrEmpty(m.Name) ? Tr("Macro sin nombre") : m.Name, 14.5, Br("Text"), FontWeights.SemiBold);
+            var summary = Cap(MacroSummary(m)); summary.Margin = new Thickness(0, 2, 0, 0);
+            texts.Children.Add(title); texts.Children.Add(summary);
+            Grid.SetColumn(texts, 1); head.Children.Add(texts);
+            var chipText = new TextBlock { Text = string.IsNullOrEmpty(m.Hotkey) ? Tr("Sin atajo") : m.Hotkey, FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 12,
+                                           Foreground = string.IsNullOrEmpty(m.Hotkey) ? Br("Mute") : Br("Text") };
+            var chip = new Border { Background = Hex("#0F0F12"), BorderBrush = Br("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7),
+                                    Padding = new Thickness(10, 5, 10, 5), Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, Child = chipText };
+            Grid.SetColumn(chip, 2); head.Children.Add(chip);
+            var sw = new CheckBox { Style = St("Switch"), IsChecked = m.Enabled, Margin = new Thickness(14, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = Tr("Activar o desactivar esta macro") };
+            sw.Click += (s, e) =>
             {
-                if (!armed) { armed = true; del.Content = Tr("¿Seguro?"); return; }
-                macroHost.Data.Items.Remove(m);
+                m.Enabled = sw.IsChecked == true;
+                iconBg.Background = m.Enabled ? Br("AccentSoft") : Hex("#1C1C20");
+                iconBg.Child = Glyph("", 16, m.Enabled ? Br("Accent") : Br("Sub"));
                 MacroSaved(true);
-                RebuildMacros();
             };
-            Grid.SetColumn(del, 3); head.Children.Add(del);
+            Grid.SetColumn(sw, 3); head.Children.Add(sw);
+            var chevron = Glyph("", 12, Br("Sub"));
+            var rot = new RotateTransform(open ? 180 : 0);
+            chevron.RenderTransformOrigin = new Point(0.5, 0.5); chevron.RenderTransform = rot; chevron.Margin = new Thickness(6, 0, 4, 0);
+            Grid.SetColumn(chevron, 4); head.Children.Add(chevron);
             sp.Children.Add(head);
 
-            var timing = new WrapPanel { Margin = new Thickness(2, 12, 0, 0) };
-            timing.Children.Add(MsField(Tr("Retardo antes de empezar"), Tr("Espera desde que pulsas el atajo hasta que empieza la macro."), m.StartDelay, 10000,
-                v => { m.StartDelay = v; MacroSaved(false); }));
-            sp.Children.Add(timing);
+            // ---- editor
+            var body = new StackPanel { Margin = new Thickness(18, 0, 18, 18), Visibility = open ? Visibility.Visible : Visibility.Collapsed };
+            body.Children.Add(new Border { Height = 1, Background = Br("Line"), Margin = new Thickness(0, 0, 0, 14) });
 
-            sp.Children.Add(new TextBlock { Text = Tr("PASOS"), Style = St("Sec"), Margin = new Thickness(2, 16, 0, 0) });
-            for (int i = 0; i < m.Steps.Count; i++) sp.Children.Add(StepRow(m, i));
+            var fields = new WrapPanel();
+            var nameBox = new TextBox { Text = m.Name, Width = 230, FontWeight = FontWeights.SemiBold };
+            nameBox.LostFocus += (s, e) =>
+            {
+                m.Name = nameBox.Text.Trim();
+                title.Text = string.IsNullOrEmpty(m.Name) ? Tr("Macro sin nombre") : m.Name;
+                MacroSaved(false);
+            };
+            Func<string, FrameworkElement, FrameworkElement> labeled = (label, ctl) =>
+            {
+                var p = new StackPanel { Margin = new Thickness(0, 0, 22, 10) };
+                p.Children.Add(new TextBlock { Text = label, Foreground = Br("Sub"), FontSize = 12, Margin = new Thickness(0, 0, 0, 6) });
+                p.Children.Add(ctl);
+                return p;
+            };
+            fields.Children.Add(labeled(Tr("Nombre"), nameBox));
+            fields.Children.Add(labeled(Tr("Atajo"), KeyRecorder(m.Hotkey, true, v =>
+            {
+                m.Hotkey = v;
+                chipText.Text = string.IsNullOrEmpty(v) ? Tr("Sin atajo") : v;
+                chipText.Foreground = string.IsNullOrEmpty(v) ? Br("Mute") : Br("Text");
+                MacroSaved(true);
+            })));
+            var delay = MsField("", Tr("Espera desde que pulsas el atajo hasta que empieza la macro."), m.StartDelay, 10000, v => { m.StartDelay = v; MacroSaved(false); });
+            fields.Children.Add(labeled(Tr("Retardo antes de empezar"), delay));
+            body.Children.Add(fields);
 
-            var add = new WrapPanel { Margin = new Thickness(0, 12, 0, 0) };
+            body.Children.Add(new TextBlock { Text = Tr("PASOS"), Style = St("Sec"), Margin = new Thickness(2, 12, 0, 8) });
+            if (m.Steps.Count == 0) body.Children.Add(Cap(Tr("Añade el primer paso con los botones de abajo.")));
+            for (int i = 0; i < m.Steps.Count; i++) body.Children.Add(StepRow(m, i));
+
+            var add = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
             foreach (var kd in MacroKinds())
             {
                 string kind = kd[0];
-                var b = Btn("+ " + kd[1], "Secondary", () =>
+                var b = IconTextBtn(KindGlyph(kind), kd[1], "Secondary", () =>
                 {
                     m.Steps.Add(new MacroStep { Kind = kind, Value = DefaultStepValue(kind) });
                     MacroSaved(true);
                     RebuildMacros();
                 });
-                b.Margin = new Thickness(0, 0, 8, 0);
+                b.Margin = new Thickness(0, 0, 8, 8);
                 add.Children.Add(b);
             }
-            sp.Children.Add(add);
+            body.Children.Add(add);
+
+            var foot = new Grid { Margin = new Thickness(0, 10, 0, 0) };
+            var dup = IconTextBtn("", Tr("Duplicar"), "Ghost", () => DuplicateMacro(m));
+            dup.HorizontalAlignment = HorizontalAlignment.Left;
+            foot.Children.Add(dup);
+            bool armed = false;
+            var delText = new TextBlock { Text = Tr("Eliminar"), Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            var delRow = new StackPanel { Orientation = Orientation.Horizontal };
+            delRow.Children.Add(Glyph("", 12, null)); delRow.Children.Add(delText);
+            var del = new Button { Style = St("Ghost"), Foreground = Br("Bad"), Padding = new Thickness(12, 7, 12, 7), Content = delRow, HorizontalAlignment = HorizontalAlignment.Right };
+            del.Click += (s, e) =>
+            {
+                if (!armed) { armed = true; delText.Text = Tr("¿Seguro?"); return; }
+                macroHost.Data.Items.Remove(m);
+                macroOpen.Remove(m.Id);
+                MacroSaved(true);
+                RebuildMacros();
+            };
+            foot.Children.Add(del);
+            body.Children.Add(foot);
+            sp.Children.Add(body);
+
+            head.MouseLeftButtonUp += (s, e) =>
+            {
+                open = !open;
+                if (open) macroOpen.Add(m.Id); else macroOpen.Remove(m.Id);
+                rot.BeginAnimation(RotateTransform.AngleProperty, new DoubleAnimation(open ? 180 : 0, TimeSpan.FromMilliseconds(220)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+                body.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+                if (open) { int k = 0; foreach (UIElement c in body.Children) AnimateIn(c, k++ * 30, 10, false); }
+            };
             return card;
+        }
+
+        void DuplicateMacro(Macro m)
+        {
+            var copy = new Macro { Name = m.Name + " " + Tr("(copia)"), Hotkey = "", Enabled = m.Enabled, StartDelay = m.StartDelay };
+            foreach (var s in m.Steps) copy.Steps.Add(new MacroStep { Kind = s.Kind, Value = s.Value, Hold = s.Hold, Delay = s.Delay });
+            macroHost.Data.Items.Insert(macroHost.Data.Items.IndexOf(m) + 1, copy);
+            macroOpen.Add(copy.Id);
+            MacroSaved(true);
+            RebuildMacros();
+            Toast(Tr("Macro duplicada. Ponle un atajo nuevo."), 0);
         }
 
         List<string[]> MacroKinds()
@@ -2720,14 +3252,15 @@ namespace GameBoost
         {
             var st = m.Steps[i];
             // Fila 1: número, tipo de paso y botones (subir/bajar/quitar). Fila 2: editor del paso a todo el ancho.
-            var g = new Grid { Margin = new Thickness(0, 12, 0, 0) };
-            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(26) });
+            var g = new Grid();
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(40) });
             g.ColumnDefinitions.Add(new ColumnDefinition());
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             g.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             g.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            g.Children.Add(new TextBlock { Text = (i + 1) + ".", Foreground = Br("Mute"), VerticalAlignment = VerticalAlignment.Center });
+            g.Children.Add(new Border { Width = 28, Height = 28, CornerRadius = new CornerRadius(8), Background = Br("AccentSoft"), HorizontalAlignment = HorizontalAlignment.Left,
+                                        VerticalAlignment = VerticalAlignment.Center, Child = Glyph(KindGlyph(st.Kind), 12, Br("Accent")), ToolTip = Tf("Paso {0}", i + 1) });
             var kinds = SegBox("mk" + m.Id + "_" + i, MacroKinds(), st.Kind, c =>
             {
                 st.Kind = c; st.Value = DefaultStepValue(c);
@@ -2820,7 +3353,8 @@ namespace GameBoost
                 m.Steps.RemoveAt(i); MacroSaved(true); RebuildMacros();
             }));
             Grid.SetColumn(btns, 2); g.Children.Add(btns);
-            return g;
+            return new Border { Background = Hex("#0F0F12"), BorderBrush = Br("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10),
+                                Padding = new Thickness(12, 10, 10, 12), Margin = new Thickness(0, 0, 0, 8), Child = g };
         }
 
         // ============================================================ self test
@@ -2838,6 +3372,8 @@ namespace GameBoost
                 () => {}, () => {}, () => {}, () => {}, () => snap("dash"),
                 () => Nav("Games"), () => snap("games"),
                 () => Nav("Tweaks"), () => snap("tweaks"),
+                () => Nav("Net"), () => {}, () => snap("net"),
+                () => { var sv = E<ScrollViewer>("PageNet"); sv.ScrollToVerticalOffset(700); }, () => snap("net2"),
                 () => Nav("Bench"), () => snap("bench"),
                 () => Nav("Cross"), () => snap("cross"),
                 () => { var sv = E<ScrollViewer>("PageCross"); sv.ScrollToVerticalOffset(520); }, () => snap("cross2"),

@@ -21,6 +21,7 @@ Este archivo lo lee Claude Code automáticamente al abrir una sesión en esta ca
 | `Crosshair.cs` | Crosshair superpuesto: ajustes (`crosshair.json`), dibujo, ventana transparente click-through y atajo global. La página está en `App.cs` (`BuildCrosshair`) |
 | `AimTrainer.cs` | Entrenador de puntería (Flicks, Gridshot, Tracking, Reacción); marcas en `aim.json`. Página en `App.cs` (`BuildAim`) |
 | `Macros.cs` | Macros: atajo global → pasos (texto, teclas, esperar, abrir) con `SendInput`; se pausan en Modo Juego o con un juego delante. Datos en `macros.json`. Página en `App.cs` (`BuildMacros`) |
+| `Net.cs` | Medidas de red: ping ICMP, latencia TCP a regiones de AWS y comparativa de DNS. Página "Red y ping" en `App.cs` (`BuildNet`); los ajustes de red (Nagle, QoS, P2P...) están en `Core.cs` |
 | `Services.cs` | Instalador, desinstalación y actualizaciones (`Feed` apunta a `version.json` en `main`) |
 | `Lang.cs`, `check-lang.ps1` | Traducciones y validador de cadenas (textos con `Tr("...")` / `Tf(...)`) |
 | `Setup.cs`, `Setup.xaml` | Instalador gráfico |

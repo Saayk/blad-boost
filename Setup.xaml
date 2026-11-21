@@ -2,15 +2,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="GameBoost Setup" Width="560" Height="600" WindowStyle="None" AllowsTransparency="True"
         Background="Transparent" ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
-        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13" Foreground="#E8EAF0"
+        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13" Foreground="#F5F5F7"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
   <Window.Resources>
-    <SolidColorBrush x:Key="Accent" Color="#7B61FF"/>
-    <SolidColorBrush x:Key="Sub" Color="#8A90A2"/>
+    <SolidColorBrush x:Key="Accent" Color="#E5242F"/>
+    <SolidColorBrush x:Key="Sub" Color="#A1A1AA"/>
     <FontFamily x:Key="Icons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
     <LinearGradientBrush x:Key="AccentGrad" StartPoint="0,0" EndPoint="1,1">
-      <GradientStop Color="#8A6BFF" Offset="0"/>
-      <GradientStop Color="#5A7BFF" Offset="1"/>
+      <GradientStop Color="#FF3D4A" Offset="0"/>
+      <GradientStop Color="#B5121F" Offset="1"/>
     </LinearGradientBrush>
     <Style x:Key="Primary" TargetType="Button">
       <Setter Property="Foreground" Value="White"/>
@@ -57,8 +57,8 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="CheckBox">
-            <Border x:Name="track" Width="40" Height="22" CornerRadius="11" Background="#262B39">
-              <Ellipse x:Name="thumb" Width="16" Height="16" Fill="#9AA0B2" HorizontalAlignment="Left" Margin="3,0,0,0">
+            <Border x:Name="track" Width="40" Height="22" CornerRadius="11" Background="#2E2E34">
+              <Ellipse x:Name="thumb" Width="16" Height="16" Fill="#A8A8B0" HorizontalAlignment="Left" Margin="3,0,0,0">
                 <Ellipse.RenderTransform><TranslateTransform X="0"/></Ellipse.RenderTransform>
               </Ellipse>
             </Border>
@@ -85,21 +85,21 @@
     </Style>
   </Window.Resources>
 
-  <Border Margin="14" CornerRadius="14" Background="#0B0D12" BorderBrush="#1C2130" BorderThickness="1">
+  <Border Margin="14" CornerRadius="14" Background="#0B0B0D" BorderBrush="#232328" BorderThickness="1">
     <Border.Effect><DropShadowEffect BlurRadius="26" ShadowDepth="0" Opacity="0.55" Color="Black"/></Border.Effect>
     <Grid>
       <Border Height="190" VerticalAlignment="Top" CornerRadius="13,13,0,0">
         <Border.Background>
           <RadialGradientBrush Center="0.5,0" GradientOrigin="0.5,0" RadiusX="0.9" RadiusY="1">
-            <GradientStop Color="#2A1F66" Offset="0"/>
-            <GradientStop Color="#0B0D12" Offset="1"/>
+            <GradientStop Color="#48131B" Offset="0"/>
+            <GradientStop Color="#0B0B0D" Offset="1"/>
           </RadialGradientBrush>
         </Border.Background>
       </Border>
       <Button x:Name="BtnX" Style="{StaticResource CloseBtn}" Content="&#xE8BB;" HorizontalAlignment="Right" VerticalAlignment="Top"/>
       <StackPanel Margin="36,40,36,28">
         <Border Width="72" Height="72" CornerRadius="20" Background="{StaticResource AccentGrad}" HorizontalAlignment="Center">
-          <Border.Effect><DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.6" Color="#7B61FF"/></Border.Effect>
+          <Border.Effect><DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.6" Color="#E5242F"/></Border.Effect>
           <TextBlock Text="&#xE945;" FontFamily="{StaticResource Icons}" FontSize="32" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Border>
         <TextBlock Text="GameBoost" FontSize="28" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,16,0,0" FontFamily="Segoe UI Variable Display, Segoe UI"/>
@@ -107,15 +107,15 @@
           <TextBlock Text="by BLAD Studios" Foreground="{StaticResource Sub}"/>
           <TextBlock x:Name="SetupVersion" Foreground="{StaticResource Sub}" Margin="8,0,0,0"/>
         </StackPanel>
-        <TextBlock Text="Optimizador de PC para juegos" Foreground="#B9BED0" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+        <TextBlock Text="Optimizador de PC para juegos" Foreground="#CFCFD6" HorizontalAlignment="Center" Margin="0,10,0,0"/>
 
-        <Border Background="#13161E" CornerRadius="12" BorderBrush="#1F2430" BorderThickness="1" Margin="0,24,0,0">
+        <Border Background="#151518" CornerRadius="12" BorderBrush="#27272C" BorderThickness="1" Margin="0,24,0,0">
           <StackPanel>
             <Grid Margin="18,14">
               <TextBlock Text="Crear acceso directo en el escritorio" VerticalAlignment="Center" FontWeight="SemiBold"/>
               <CheckBox x:Name="ChkDesktop" Style="{StaticResource Switch}" IsChecked="True" HorizontalAlignment="Right"/>
             </Grid>
-            <Border Height="1" Background="#1F2430"/>
+            <Border Height="1" Background="#27272C"/>
             <Grid Margin="18,14">
               <TextBlock Text="Iniciar con Windows (en la bandeja)" VerticalAlignment="Center" FontWeight="SemiBold"/>
               <CheckBox x:Name="ChkStartup" Style="{StaticResource Switch}" IsChecked="True" HorizontalAlignment="Right"/>
@@ -125,17 +125,17 @@
 
         <StackPanel Orientation="Horizontal" Margin="2,14,0,0">
           <TextBlock Text="Se instalará en" Foreground="{StaticResource Sub}" FontSize="12"/>
-          <TextBlock x:Name="InstallPath" Foreground="#B9BED0" FontSize="12" Margin="6,0,0,0"/>
+          <TextBlock x:Name="InstallPath" Foreground="#CFCFD6" FontSize="12" Margin="6,0,0,0"/>
         </StackPanel>
 
         <Grid Height="5" Margin="0,18,0,0">
-          <Border Background="#1F2430" CornerRadius="3"/>
+          <Border Background="#27272C" CornerRadius="3"/>
           <Border x:Name="Bar" Background="{StaticResource AccentGrad}" CornerRadius="3" HorizontalAlignment="Left" Width="0"/>
         </Grid>
         <TextBlock x:Name="StepText" Foreground="{StaticResource Sub}" FontSize="12" Margin="2,8,0,0" TextWrapping="Wrap"/>
 
         <Button x:Name="BtnInstall" Style="{StaticResource Primary}" Content="Instalar" Margin="0,14,0,0"/>
-        <TextBlock Text="Al instalar aceptas que GameBoost modifique ajustes de Windows. Todos los cambios son reversibles." Foreground="#5A6072" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="0,12,0,0"/>
+        <TextBlock Text="Al instalar aceptas que GameBoost modifique ajustes de Windows. Todos los cambios son reversibles." Foreground="#66666F" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="0,12,0,0"/>
       </StackPanel>
     </Grid>
   </Border>

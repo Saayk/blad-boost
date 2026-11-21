@@ -359,6 +359,47 @@ namespace GameBoost
 
         static void CaptureDns() { foreach (var p in ActiveIfaces()) Backup.Capture(Sys.LM, p, "NameServer"); }
 
+        // Cambia el DNS de los adaptadores activos (null = volver al DNS automático del router).
+        public static void SetDns(string primary, string secondary)
+        {
+            CaptureDns();
+            if (primary == null) Sys.Run("powershell", "-NoProfile -Command \"Get-NetAdapter | Set-DnsClientServerAddress -ResetServerAddresses\"");
+            else Sys.Run("powershell", "-NoProfile -Command \"Get-NetAdapter | ? Status -eq 'Up' | Set-DnsClientServerAddress -ServerAddresses " + primary + "," + secondary + "\"");
+        }
+
+        // ---- QoS: marca con DSCP 46 (tráfico prioritario) el tráfico de los procesos de juego conocidos.
+        const string QosKey = @"SOFTWARE\Policies\Microsoft\Windows\QoS";
+        const string QosNla = @"SYSTEM\CurrentControlSet\Services\Tcpip\QoS";
+        const string DoKey = @"SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization";
+        // La interfaz indica qué procesos son juegos (lista conocida + juegos añadidos por el usuario).
+        public static Func<IEnumerable<string>> GameProcesses = () => new string[0];
+
+        static bool QosActive()
+        {
+            using (var k = Sys.LM.OpenSubKey(QosKey)) return k != null && k.GetSubKeyNames().Any(n => n.StartsWith("GameBoost "));
+        }
+
+        static void QosApply()
+        {
+            QosRemove();
+            Sys.SetSz(Sys.LM, QosNla, "Do not use NLA", "1"); // necesario en PCs que no están en un dominio
+            foreach (var p in GameProcesses().Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase))
+                using (var k = Sys.LM.CreateSubKey(QosKey + "\\GameBoost " + p))
+                {
+                    k.SetValue("Version", "1.0"); k.SetValue("Application Name", p + ".exe"); k.SetValue("Protocol", "*");
+                    k.SetValue("Local Port", "*"); k.SetValue("Local IP", "*"); k.SetValue("Local IP Prefix Length", "*");
+                    k.SetValue("Remote Port", "*"); k.SetValue("Remote IP", "*"); k.SetValue("Remote IP Prefix Length", "*");
+                    k.SetValue("DSCP Value", "46"); k.SetValue("Throttle Rate", "-1");
+                }
+            Sys.Run("gpupdate", "/target:computer /force");
+        }
+
+        static void QosRemove()
+        {
+            using (var k = Sys.LM.OpenSubKey(QosKey, true))
+                if (k != null) foreach (var n in k.GetSubKeyNames().Where(n => n.StartsWith("GameBoost "))) k.DeleteSubKeyTree(n, false);
+        }
+
         static void KbdDelay(uint v)
         {
             Backup.Capture(Sys.CU, @"Control Panel\Keyboard", "KeyboardDelay");
@@ -493,6 +534,18 @@ namespace GameBoost
                 () => AnyInterface(k => ((k.GetValue("NameServer") as string) ?? "").Contains("1.1.1.1")),
                 () => { CaptureDns(); Sys.Run("powershell", "-NoProfile -Command \"Get-NetAdapter | ? Status -eq 'Up' | Set-DnsClientServerAddress -ServerAddresses 1.1.1.1,1.0.0.1\""); },
                 () => { CaptureDns(); Sys.Run("powershell", "-NoProfile -Command \"Get-NetAdapter | Set-DnsClientServerAddress -ResetServerAddresses\""); });
+
+            Add("qos", N, "Prioridad de red para tus juegos (QoS)",
+                "Marca el tráfico de tus juegos como prioritario (DSCP 46). Ayuda cuando otros usan tu red, si el router respeta QoS/WMM. Puede no tener efecto en Windows Home. Se aplica al reiniciar.", 2, false, true,
+                QosActive,
+                QosApply,
+                () => { QosRemove(); Sys.Del(Sys.LM, QosNla, "Do not use NLA"); });
+
+            Add("p2p", N, "Sin subidas P2P de Windows Update",
+                "Impide que Windows use tu conexión para enviar actualizaciones a otros equipos de Internet, algo que satura la subida y dispara el ping.", 2, false, false,
+                () => Sys.Dw(Sys.LM, DoKey, "DODownloadMode") == 0,
+                () => Sys.SetDw(Sys.LM, DoKey, "DODownloadMode", 0),
+                () => Sys.Del(Sys.LM, DoKey, "DODownloadMode"));
 
             Add("mouse", P, "Desactivar aceleración del mouse",
                 "Movimiento 1:1: la mira se mueve igual sin importar la velocidad de tu mano. Imprescindible para apuntar.", 3, true, false,
